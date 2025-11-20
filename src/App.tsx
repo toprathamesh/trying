@@ -28,13 +28,13 @@ function App() {
         url = await generationService.searchLibrary(inputValue);
         
         if (!url) {
-          setStatusMessage(`No exact match found in library. Try 'duck', 'helmet', 'boombox', 'car'...`);
+          setStatusMessage(`No exact match found. Try 'duck', 'helmet', 'boombox', 'car'...`);
           setLoading(false);
           return;
         }
         setStatusMessage("Found in library!");
       } else {
-        setStatusMessage(`Generating model for "${inputValue}" with AI...`);
+        setStatusMessage(`Generating model for "${inputValue}"...`);
         url = await generationService.generateWithFLUX(inputValue);
         setStatusMessage("Generation complete!");
       }
@@ -52,7 +52,7 @@ function App() {
   };
 
   return (
-    <div className="app-container" style={{ width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
+    <div className="app-container" style={{ width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative', backgroundColor: '#000' }}>
       <BabylonViewer 
         modelUrl={modelUrl} 
         onReady={() => console.log('Scene ready')} 
@@ -69,37 +69,41 @@ function App() {
         maxWidth: '600px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '10px',
+        gap: '15px',
         zIndex: 100 
       }}>
         
         {/* Mode Toggle */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginBottom: '5px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
           <button 
             onClick={() => setMode('library')}
             style={{
-              background: mode === 'library' ? '#646cff' : 'rgba(0,0,0,0.6)',
-              color: 'white',
-              border: mode === 'library' ? '2px solid white' : '1px solid #555',
-              padding: '8px 16px',
-              borderRadius: '20px',
-              opacity: mode === 'library' ? 1 : 0.7
+              background: mode === 'library' ? '#ffffff' : 'transparent',
+              color: mode === 'library' ? '#000000' : '#ffffff',
+              border: '1px solid #ffffff',
+              padding: '8px 20px',
+              borderRadius: '2px',
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              fontSize: '0.8rem'
             }}
           >
-            📚 Search Library
+            Library
           </button>
           <button 
             onClick={() => setMode('generate')}
             style={{
-              background: mode === 'generate' ? '#d946ef' : 'rgba(0,0,0,0.6)',
-              color: 'white',
-              border: mode === 'generate' ? '2px solid white' : '1px solid #555',
-              padding: '8px 16px',
-              borderRadius: '20px',
-              opacity: mode === 'generate' ? 1 : 0.7
+              background: mode === 'generate' ? '#ffffff' : 'transparent',
+              color: mode === 'generate' ? '#000000' : '#ffffff',
+              border: '1px solid #ffffff',
+              padding: '8px 20px',
+              borderRadius: '2px',
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              fontSize: '0.8rem'
             }}
           >
-            ✨ Generate (AI)
+            Generate
           </button>
         </div>
 
@@ -108,17 +112,16 @@ function App() {
             type="text" 
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder={mode === 'library' ? "Search existing models (e.g. 'duck', 'helmet')" : "Describe what to generate..."}
+            placeholder={mode === 'library' ? "Search..." : "Describe..."}
             style={{
               flex: 1,
               padding: '12px 20px',
-              borderRadius: '24px',
-              border: 'none',
+              borderRadius: '2px',
+              border: '1px solid #333',
               background: 'rgba(0,0,0,0.8)',
               color: 'white',
               fontSize: '1rem',
-              backdropFilter: 'blur(10px)',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+              outline: 'none'
             }}
             onKeyDown={(e) => e.key === 'Enter' && handleAction()}
           />
@@ -127,28 +130,29 @@ function App() {
             disabled={loading}
             style={{ 
               padding: '12px 24px', 
-              borderRadius: '24px',
-              background: loading ? '#555' : (mode === 'library' ? '#646cff' : '#d946ef'),
-              color: 'white',
-              border: 'none',
+              borderRadius: '2px',
+              background: loading ? '#333333' : '#ffffff',
+              color: loading ? '#888888' : '#000000',
+              border: '1px solid #ffffff',
               fontWeight: 'bold',
               cursor: loading ? 'default' : 'pointer',
-              minWidth: '100px'
+              minWidth: '100px',
+              textTransform: 'uppercase',
+              letterSpacing: '1px'
             }}
           >
-            {loading ? '...' : (mode === 'library' ? 'Search' : 'Create')}
+            {loading ? '...' : 'GO'}
           </button>
         </div>
 
         {statusMessage && (
           <div style={{ 
             textAlign: 'center', 
-            color: 'rgba(255,255,255,0.8)', 
-            fontSize: '0.9rem',
-            background: 'rgba(0,0,0,0.5)',
-            padding: '5px 10px',
-            borderRadius: '10px',
-            alignSelf: 'center'
+            color: '#888', 
+            fontSize: '0.8rem',
+            marginTop: '5px',
+            textTransform: 'uppercase',
+            letterSpacing: '1px'
           }}>
             {statusMessage}
           </div>
@@ -157,9 +161,9 @@ function App() {
 
       {/* Top Left Info */}
       <div style={{ position: 'absolute', top: 20, left: 20, zIndex: 100, pointerEvents: 'none' }}>
-        <h1 style={{ color: 'white', margin: 0, fontSize: '1.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>OBVIAN 2.0</h1>
-        <p style={{ color: '#ddd', fontSize: '0.9rem', margin: '5px 0 0 0', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
-          Phase 2: Hybrid Asset Pipeline
+        <h1 style={{ color: 'white', margin: 0, fontSize: '1.2rem', letterSpacing: '2px', fontWeight: 'normal' }}>TRYING</h1>
+        <p style={{ color: '#666', fontSize: '0.8rem', margin: '5px 0 0 0', letterSpacing: '1px' }}>
+          EXPERIMENTAL
         </p>
       </div>
     </div>

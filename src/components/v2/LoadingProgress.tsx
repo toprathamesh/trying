@@ -24,7 +24,7 @@ export const LoadingProgress: React.FC<LoadingProgressProps> = ({ loading, progr
             <div>{message || "Loading..."}</div>
             {progress !== undefined && (
                 <div style={{ marginTop: 10, width: 200, height: 5, background: '#333' }}>
-                    <div style={{ width: `${progress}%`, height: '100%', background: '#4CAF50' }} />
+                    <div style={{ width: `${progress}%`, height: '100%', background: '#ffffff' }} />
                 </div>
             )}
         </div>
