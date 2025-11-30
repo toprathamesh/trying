@@ -19,6 +19,7 @@
     "@babylonjs/core": "^8.38.0",
     "@babylonjs/gui": "^8.38.0",
     "@babylonjs/loaders": "^8.38.0",
+    "@google/generative-ai": "^0.24.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   }

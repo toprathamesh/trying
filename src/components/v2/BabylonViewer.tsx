@@ -1,76 +1,111 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { useBabylonScene } from '../../hooks/useBabylonScene';
 import { useCharacterController } from '../../hooks/useCharacterController';
+import type { LoadedSceneElement } from '../../services/sceneComposer';
+import { BabylonSceneManager } from '../../services/babylonService';
 
 interface BabylonViewerProps {
-  modelUrl?: string;
   onReady?: () => void;
-  onObjectClick?: (objectName: string) => void;
+  onObjectClick?: (objectName: string, meshName: string) => void;
 }
 
-export const BabylonViewer = ({ modelUrl, onReady, onObjectClick }: BabylonViewerProps) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const sceneManager = useBabylonScene(canvasRef);
-  
-  // Enable character controller
-  useCharacterController(sceneManager?.getScene());
-  
-  useEffect(() => {
-    if (sceneManager && modelUrl) {
-      sceneManager.loadModel(modelUrl)
-        .then(() => {
-          console.log(`Model loaded: ${modelUrl}`);
-        })
-        .catch((err) => {
-          console.error("Failed to load model", err);
-        });
-    }
-  }, [sceneManager, modelUrl]);
+export interface BabylonViewerHandle {
+  getSceneManager: () => BabylonSceneManager | null;
+  loadModel: (url: string) => Promise<void>;
+  loadComposedScene: (elements: LoadedSceneElement[], onProgress?: (loaded: number, total: number) => void) => Promise<void>;
+  setCameraPosition: (pos: { x: number; y: number; z: number }) => void;
+  setAmbiance: (ambiance: 'bright' | 'dim' | 'dramatic' | 'natural') => void;
+  clearScene: () => void;
+}
 
-  useEffect(() => {
-    if (sceneManager && onReady) {
-       // We could wait for scene to be ready, but for now just call it
-       onReady();
-    }
-  }, [sceneManager, onReady]);
-
-  // Setup click handling
-  useEffect(() => {
-    if (!sceneManager || !onObjectClick) return;
-
-    const scene = sceneManager.getScene();
-    const observer = scene.onPointerObservable.add((pointerInfo) => {
-        if (pointerInfo.type === 4) { // POINTERDOWN = 4 in Babylon (using direct number or enum)
-            // 4 is actually POINTERDOWN, check import for enum
-            // Import enum or use BABYLON.PointerEventTypes.POINTERDOWN
-        }
-    });
+export const BabylonViewer = forwardRef<BabylonViewerHandle, BabylonViewerProps>(
+  ({ onReady, onObjectClick }, ref) => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const sceneManager = useBabylonScene(canvasRef);
     
-    // Better approach: use scene.onPointerDown
-    const originalOnPointerDown = scene.onPointerDown;
-    scene.onPointerDown = (evt, pickResult) => {
+    // Enable character controller
+    useCharacterController(sceneManager?.getScene());
+
+    // Expose methods to parent
+    useImperativeHandle(ref, () => ({
+      getSceneManager: () => sceneManager,
+      loadModel: async (url: string) => {
+        if (sceneManager) {
+          await sceneManager.loadModel(url);
+        }
+      },
+      loadComposedScene: async (elements: LoadedSceneElement[], onProgress?: (loaded: number, total: number) => void) => {
+        if (sceneManager) {
+          await sceneManager.loadComposedScene(elements, onProgress);
+        }
+      },
+      setCameraPosition: (pos: { x: number; y: number; z: number }) => {
+        if (sceneManager) {
+          sceneManager.setCameraPosition(pos);
+        }
+      },
+      setAmbiance: (ambiance: 'bright' | 'dim' | 'dramatic' | 'natural') => {
+        if (sceneManager) {
+          sceneManager.setAmbiance(ambiance);
+        }
+      },
+      clearScene: () => {
+        if (sceneManager) {
+          sceneManager.clearAllModels();
+        }
+      }
+    }), [sceneManager]);
+
+    // Notify when ready
+    useEffect(() => {
+      if (sceneManager && onReady) {
+        onReady();
+      }
+    }, [sceneManager, onReady]);
+
+    // Setup click handling
+    useEffect(() => {
+      if (!sceneManager || !onObjectClick) return;
+
+      const scene = sceneManager.getScene();
+      
+      scene.onPointerDown = (evt, pickResult) => {
+        // Only process left clicks
+        if (evt.button !== 0) return;
+        
         if (pickResult.hit && pickResult.pickedMesh) {
-            onObjectClick(pickResult.pickedMesh.name);
+          const meshName = pickResult.pickedMesh.name;
+          
+          // Skip ground and grid
+          if (meshName === 'ground' || meshName.startsWith('grid')) {
+            return;
+          }
+          
+          // Get element info from metadata
+          const elementInfo = sceneManager.getElementFromMesh(pickResult.pickedMesh);
+          const objectName = elementInfo?.name || meshName;
+          
+          onObjectClick(objectName, meshName);
         }
-        if (originalOnPointerDown) originalOnPointerDown(evt, pickResult);
-    };
+      };
 
-    return () => {
-        // Cleanup if needed, though scene dispose handles most
-        if (scene.onPointerDown === originalOnPointerDown) {
-             scene.onPointerDown = undefined!; // difficult to restore perfectly if multiple things attach
-        }
-    };
-  }, [sceneManager, onObjectClick]);
+      return () => {
+        scene.onPointerDown = undefined!;
+      };
+    }, [sceneManager, onObjectClick]);
 
-  return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+    return (
       <canvas 
         ref={canvasRef} 
-        style={{ width: '100%', height: '100%', outline: 'none' }} 
+        style={{ 
+          width: '100%', 
+          height: '100%', 
+          outline: 'none',
+          display: 'block'
+        }} 
       />
-      {/* Overlay UI can go here */}
-    </div>
-  );
-};
+    );
+  }
+);
 
+BabylonViewer.displayName = 'BabylonViewer';

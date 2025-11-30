@@ -16,7 +16,7 @@ export class AnnotationService {
 
   async generateAnnotation(
     objectName: string, 
-    context: string
+    _context: string
   ): Promise<Annotation> {
     // Mock response for now
     return {

@@ -28,8 +28,6 @@ export class ModelGenerationService {
     "transport": "buggy"
   };
 
-  private readonly FALLBACK_MODEL = "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Box/glTF-Binary/Box.glb";
-
   async searchLibrary(query: string): Promise<string | null> {
     console.log(`Searching library for: ${query}`);
     const normalizedQuery = query.toLowerCase().trim();
