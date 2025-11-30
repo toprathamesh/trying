@@ -8,26 +8,12 @@ import { SceneComposer } from './services/sceneComposer';
 import type { ComposedScene } from './services/sceneComposer';
 import type { ObjectAnnotation } from './services/geminiService';
 
-// Get API key from environment or localStorage
-const getApiKey = (): string => {
-  // Check localStorage first (for user-provided key)
-  const stored = localStorage.getItem('GEMINI_API_KEY');
-  if (stored) return stored;
-  
-  // Check environment variables (Vite format)
-  if (import.meta.env.VITE_GEMINI_API_KEY) {
-    return import.meta.env.VITE_GEMINI_API_KEY;
-  }
-  
-  return '';
-};
+// Initialize scene composer (no API key needed - backend handles it)
+const sceneComposer = new SceneComposer();
 
 function App() {
   // Core state
   const viewerRef = useRef<BabylonViewerHandle>(null);
-  const [apiKey, setApiKey] = useState(getApiKey());
-  const [showApiKeyModal, setShowApiKeyModal] = useState(!apiKey);
-  const [sceneComposer, setSceneComposer] = useState<SceneComposer | null>(null);
   
   // UI state
   const [inputValue, setInputValue] = useState('');
@@ -53,17 +39,9 @@ function App() {
     'Human brain anatomy'
   ]);
 
-  // Initialize SceneComposer when API key is available
-  useEffect(() => {
-    if (apiKey) {
-      setSceneComposer(new SceneComposer(apiKey));
-      localStorage.setItem('GEMINI_API_KEY', apiKey);
-    }
-  }, [apiKey]);
-
   // Handle scene composition
   const handleCompose = useCallback(async () => {
-    if (!inputValue.trim() || !sceneComposer || !viewerRef.current) return;
+    if (!inputValue.trim() || !viewerRef.current) return;
     
     setIsLoading(true);
     setShowAnnotation(false);
@@ -126,12 +104,10 @@ function App() {
         setLoadingProgress(0);
       }, 500);
     }
-  }, [inputValue, mode, sceneComposer]);
+  }, [inputValue, mode]);
 
   // Handle object click
   const handleObjectClick = useCallback(async (objectName: string, meshName: string) => {
-    if (!sceneComposer) return;
-    
     setClickedObjectName(objectName);
     setShowAnnotation(true);
     setAnnotationLoading(true);
@@ -145,17 +121,13 @@ function App() {
     } finally {
       setAnnotationLoading(false);
     }
-  }, [sceneComposer]);
+  }, []);
 
   // Handle related topic click
   const handleRelatedClick = useCallback((topic: string) => {
     setInputValue(topic);
     setShowAnnotation(false);
-    // Auto-trigger composition
-    setTimeout(() => {
-      handleCompose();
-    }, 100);
-  }, [handleCompose]);
+  }, []);
 
   // Hide controls after initial period
   useEffect(() => {
@@ -178,118 +150,6 @@ function App() {
         onReady={() => console.log('Scene ready')} 
         onObjectClick={handleObjectClick}
       />
-      
-      {/* API Key Modal */}
-      {showApiKeyModal && (
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'rgba(5, 5, 15, 0.98)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          backdropFilter: 'blur(20px)'
-        }}>
-          <div style={{
-            background: 'linear-gradient(135deg, rgba(20, 20, 35, 0.95) 0%, rgba(30, 30, 50, 0.95) 100%)',
-            borderRadius: 20,
-            padding: 40,
-            width: 450,
-            maxWidth: '90vw',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            boxShadow: '0 40px 100px rgba(0, 0, 0, 0.5)'
-          }}>
-            <h1 style={{
-              margin: '0 0 8px',
-              fontSize: '2rem',
-              fontWeight: 300,
-              letterSpacing: 4,
-              color: 'white'
-            }}>
-              OBVIAN
-            </h1>
-            <p style={{
-              margin: '0 0 30px',
-              color: '#6B8AFF',
-              fontSize: '0.9rem',
-              letterSpacing: 1
-            }}>
-              Immersive 3D Learning Platform
-            </p>
-            
-            <p style={{
-              margin: '0 0 20px',
-              color: '#AAA',
-              fontSize: '0.9rem',
-              lineHeight: 1.6
-            }}>
-              Enter your Google Gemini API key to enable AI-powered scene composition and annotations.
-            </p>
-            
-            <input
-              type="password"
-              placeholder="AIza..."
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '14px 18px',
-                background: 'rgba(0, 0, 0, 0.4)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: 10,
-                color: 'white',
-                fontSize: '1rem',
-                outline: 'none',
-                marginBottom: 20,
-                boxSizing: 'border-box'
-              }}
-            />
-            
-            <button
-              onClick={() => {
-                if (apiKey) {
-                  setShowApiKeyModal(false);
-                }
-              }}
-              disabled={!apiKey}
-              style={{
-                width: '100%',
-                padding: '14px',
-                background: apiKey 
-                  ? 'linear-gradient(135deg, #6B8AFF 0%, #A78BFA 100%)'
-                  : 'rgba(255, 255, 255, 0.1)',
-                border: 'none',
-                borderRadius: 10,
-                color: 'white',
-                fontSize: '1rem',
-                fontWeight: 500,
-                cursor: apiKey ? 'pointer' : 'default',
-                letterSpacing: 1
-              }}
-            >
-              Start Exploring
-            </button>
-            
-            <p style={{
-              margin: '20px 0 0',
-              color: '#666',
-              fontSize: '0.75rem',
-              textAlign: 'center'
-            }}>
-              Get your API key at{' '}
-              <a 
-                href="https://aistudio.google.com/apikey" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                style={{ color: '#6B8AFF' }}
-              >
-                Google AI Studio
-              </a>
-            </p>
-          </div>
-        </div>
-      )}
       
       {/* Loading Screen */}
       <LoadingProgress
@@ -532,40 +392,6 @@ function App() {
             : 'Quickly search and load a single 3D model'}
         </p>
       </div>
-
-      {/* Settings Button */}
-      <button
-        onClick={() => setShowApiKeyModal(true)}
-        style={{
-          position: 'absolute',
-          top: 24,
-          right: 24,
-          width: 40,
-          height: 40,
-          borderRadius: 10,
-          background: 'rgba(255, 255, 255, 0.08)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          color: '#888',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '1.2rem',
-          zIndex: 100,
-          transition: 'all 0.2s'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-          e.currentTarget.style.color = 'white';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
-          e.currentTarget.style.color = '#888';
-        }}
-        title="Settings"
-      >
-        ⚙
-      </button>
 
       {/* Toggle Controls Button */}
       <button

@@ -22,7 +22,7 @@ export type SceneUpdateCallback = (scene: ComposedScene) => void;
  * SceneComposer - The brain of OBVIAN
  * 
  * Takes a user query and orchestrates:
- * 1. Gemini AI to understand and compose the scene
+ * 1. Backend API (Gemini) to understand and compose the scene
  * 2. Poly Pizza to find actual 3D models
  * 3. Babylon.js scene loading (via callback)
  * 4. AI-powered annotations for interactivity
@@ -32,8 +32,9 @@ export class SceneComposer {
   private polyPizza: PolyPizzaService;
   private currentScene: ComposedScene | null = null;
 
-  constructor(geminiApiKey: string) {
-    this.gemini = new GeminiService(geminiApiKey);
+  constructor() {
+    // No API key needed - backend handles it
+    this.gemini = new GeminiService();
     this.polyPizza = new PolyPizzaService();
   }
 
@@ -61,8 +62,8 @@ export class SceneComposer {
     onUpdate?.(this.currentScene);
 
     try {
-      // Step 1: Get AI composition
-      console.log('🧠 Asking Gemini to compose scene for:', query);
+      // Step 1: Get AI composition from backend
+      console.log('🧠 Asking AI to compose scene for:', query);
       const composition = await this.gemini.composeScene(query);
       
       this.currentScene.composition = composition;
@@ -201,4 +202,3 @@ export class SceneComposer {
     return this.polyPizza.getAllFallbackModels();
   }
 }
-

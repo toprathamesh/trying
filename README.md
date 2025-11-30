@@ -40,17 +40,19 @@ npm install
 ### 2. Get a Gemini API Key
 - Visit [Google AI Studio](https://aistudio.google.com/apikey)
 - Create a new API key
-- Copy it
 
-### 3. Run the App
+### 3. Set Up Environment Variable
+Create a `.env` file:
 ```bash
-npm run dev
+GEMINI_API_KEY=your_api_key_here
 ```
 
-### 4. Enter Your API Key
-- Open http://localhost:5173
-- Enter your Gemini API key
-- Click "Start Exploring"
+### 4. Run Locally with Vercel CLI
+```bash
+npm install -g vercel
+vercel dev
+```
+This runs the frontend AND the API functions locally.
 
 ### 5. Try These Queries
 - "A dog playing in a park"
