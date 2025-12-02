@@ -61,13 +61,35 @@ export default async function handler(req: Request) {
 
     console.log(`🔍 Searching Poly Pizza for: ${query}`);
 
-    // Call Poly Pizza API from server (no CORS!)
-    const apiUrl = `https://api.poly.pizza/v1/search?q=${encodeURIComponent(query)}&limit=${limit}`;
+    // Get API key from environment
+    const apiKey = process.env.POLY_PIZZA_API_KEY;
+    if (!apiKey) {
+      console.log('⚠️ POLY_PIZZA_API_KEY not configured, using fallback models');
+      return new Response(
+        JSON.stringify({ 
+          error: 'Poly Pizza API key not configured',
+          message: 'Add POLY_PIZZA_API_KEY to your Vercel environment variables. Get a free key at https://poly.pizza/settings/api',
+          models: [],
+          total: 0,
+          query
+        }),
+        {
+          status: 200, // Return 200 so frontend uses fallback
+          headers: { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        }
+      );
+    }
+
+    // Call Poly Pizza API v1.1 from server (no CORS!)
+    const apiUrl = `https://api.poly.pizza/v1.1/search?q=${encodeURIComponent(query)}&limit=${limit}`;
     
     const response = await fetch(apiUrl, {
       headers: {
         'Accept': 'application/json',
-        'User-Agent': 'OBVIAN/1.0 (Educational 3D Learning Platform)',
+        'x-auth-token': apiKey,
       },
     });
 
