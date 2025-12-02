@@ -4,6 +4,13 @@ export const config = {
   runtime: 'edge',
 };
 
+// Model tiers based on complexity
+const MODELS = {
+  FAST: 'gemini-2.5-flash-lite',      // Ultra fast for simple tasks
+  BALANCED: 'gemini-2.5-flash-lite',  // Fast with image understanding
+  THINKING: 'gemini-2.5-flash',       // Complex reasoning tasks
+};
+
 export default async function handler(req: Request) {
   // Handle CORS
   if (req.method === 'OPTIONS') {
@@ -24,7 +31,7 @@ export default async function handler(req: Request) {
   }
 
   try {
-    const { query } = await req.json();
+    const { query, complexity = 'balanced' } = await req.json();
 
     if (!query) {
       return new Response(JSON.stringify({ error: 'Query is required' }), {
@@ -41,8 +48,13 @@ export default async function handler(req: Request) {
       });
     }
 
+    // Select model based on complexity
+    const modelName = complexity === 'simple' ? MODELS.FAST 
+                    : complexity === 'complex' ? MODELS.THINKING 
+                    : MODELS.BALANCED;
+
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    const model = genAI.getGenerativeModel({ model: modelName });
 
     const prompt = `You are a 3D scene composer for an educational platform. Given a user's question or topic, you must create an explorable 3D scene using available 3D model assets.
 
@@ -94,13 +106,42 @@ IMPORTANT:
     const result = await model.generateContent(prompt);
     const text = result.response.text();
 
+    // Log raw response for debugging
+    console.log('=== GEMINI RAW RESPONSE ===');
+    console.log(text);
+    console.log('=== END RAW RESPONSE ===');
+
     // Clean the response
     const cleaned = text
       .replace(/```json\s*/g, '')
       .replace(/```\s*/g, '')
       .trim();
 
-    const composition = JSON.parse(cleaned);
+    console.log('=== CLEANED RESPONSE ===');
+    console.log(cleaned);
+    console.log('=== END CLEANED ===');
+
+    let composition;
+    try {
+      composition = JSON.parse(cleaned);
+    } catch (parseError) {
+      // Return the raw text so we can see what Gemini sent
+      return new Response(
+        JSON.stringify({
+          error: 'Failed to parse Gemini response as JSON',
+          rawResponse: text,
+          cleanedResponse: cleaned,
+          parseError: parseError instanceof Error ? parseError.message : 'Unknown parse error',
+        }),
+        {
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        }
+      );
+    }
 
     // Validate and set defaults
     composition.elements = composition.elements.map((el: any) => ({
@@ -110,7 +151,14 @@ IMPORTANT:
       rotation: el.rotation || 0,
     }));
 
-    return new Response(JSON.stringify(composition), {
+    // Include debug info in successful response
+    return new Response(JSON.stringify({
+      ...composition,
+      _debug: {
+        model: modelName,
+        rawResponseLength: text.length,
+      }
+    }), {
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
@@ -118,10 +166,13 @@ IMPORTANT:
     });
   } catch (error) {
     console.error('Compose error:', error);
+    // Return detailed error - NO FALLBACK
     return new Response(
       JSON.stringify({
         error: 'Failed to compose scene',
         details: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        type: error instanceof Error ? error.constructor.name : typeof error,
       }),
       {
         status: 500,

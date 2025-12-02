@@ -138,24 +138,38 @@ export const config = {
 
 ## External Services
 
-### Google Gemini 2.0 Flash
-**What:** Google's latest AI model  
+### Google Gemini 2.5 Flash-Lite
+**What:** Google's fastest multimodal AI model  
 **Why:**
-- Fast responses (optimized for speed)
-- Strong instruction following
-- JSON mode for structured output
+- Ultra-fast responses (~100-300ms for simple tasks)
+- **Supports image understanding** - can see thumbnails and validate layouts
+- 1 million token context window
+- Structured JSON output
 - Free tier available
-- Better than GPT for structured scene composition
+- Perfect for high-throughput educational apps
 
-**Model:** `gemini-2.0-flash-exp`
+**Models Used:**
+| Tier | Model | Use Case |
+|------|-------|----------|
+| Fast | `gemini-2.5-flash-lite` | Annotations, simple queries |
+| Balanced | `gemini-2.5-flash-lite` | Scene composition with image validation |
+| Complex | `gemini-2.5-flash` | Deep reasoning, complex layouts |
+
+**Capabilities:**
+- ✅ Text, Image, Video, Audio, PDF input
+- ✅ Up to 3,000 images per request
+- ✅ Object detection & spatial understanding
+- ✅ Structured outputs (JSON mode)
+- ✅ Function calling
 
 **Used for:**
 1. **Scene Composition** - Understanding queries and creating multi-object layouts
 2. **Object Annotation** - Generating educational explanations
+3. **Visual Validation** - Analyzing model thumbnails to understand spatial arrangement
 
 **SDK:**
 ```json
-"@google/generative-ai": "latest"
+"@google/generative-ai": "^0.24.1"
 ```
 
 ---

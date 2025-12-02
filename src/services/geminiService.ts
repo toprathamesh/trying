@@ -39,40 +39,27 @@ export class GeminiService {
    * Analyzes user query and generates a scene composition with multiple 3D elements
    */
   async composeScene(userQuery: string): Promise<SceneComposition> {
-    try {
-      const response = await fetch(`${this.baseUrl}/api/compose`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ query: userQuery }),
-      });
+    const response = await fetch(`${this.baseUrl}/api/compose`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ query: userQuery }),
+    });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to compose scene');
-      }
+    const data = await response.json();
+    
+    // Log the full response for debugging
+    console.log('=== COMPOSE API RESPONSE ===');
+    console.log(JSON.stringify(data, null, 2));
+    console.log('=== END ===');
 
-      return await response.json();
-    } catch (error) {
-      console.error('Gemini scene composition failed:', error);
-      // Fallback to simple single-object scene
-      return {
-        title: userQuery,
-        description: `Exploring: ${userQuery}`,
-        elements: [
-          {
-            searchQuery: userQuery.split(' ')[0].toLowerCase(),
-            name: userQuery,
-            description: 'An object to explore',
-            position: { x: 0, y: 0, z: 5 },
-            scale: 1.0,
-          },
-        ],
-        cameraPosition: { x: 0, y: 1.6, z: -3 },
-        ambiance: 'natural',
-      };
+    if (!response.ok) {
+      // Throw with full error details
+      throw new Error(JSON.stringify(data, null, 2));
     }
+
+    return data;
   }
 
   /**
@@ -83,33 +70,29 @@ export class GeminiService {
     context: string,
     userLevel: 'child' | 'teen' | 'adult' = 'teen'
   ): Promise<ObjectAnnotation> {
-    try {
-      const response = await fetch(`${this.baseUrl}/api/annotate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          objectName,
-          context,
-          level: userLevel,
-        }),
-      });
+    const response = await fetch(`${this.baseUrl}/api/annotate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        objectName,
+        context,
+        level: userLevel,
+      }),
+    });
 
-      if (!response.ok) {
-        throw new Error('Failed to annotate object');
-      }
+    const data = await response.json();
+    
+    console.log('=== ANNOTATE API RESPONSE ===');
+    console.log(JSON.stringify(data, null, 2));
+    console.log('=== END ===');
 
-      return await response.json();
-    } catch (error) {
-      console.error('Gemini annotation failed:', error);
-      return {
-        title: objectName,
-        explanation: 'This is an interesting object to explore.',
-        funFact: 'Every object has a story to tell!',
-        relatedTopics: ['exploration', 'learning', 'discovery'],
-      };
+    if (!response.ok) {
+      throw new Error(JSON.stringify(data, null, 2));
     }
+
+    return data;
   }
 
   /**

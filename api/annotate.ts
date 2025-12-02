@@ -4,6 +4,9 @@ export const config = {
   runtime: 'edge',
 };
 
+// Annotation is a simple task - use the fastest model
+const MODEL = 'gemini-2.5-flash-lite';
+
 export default async function handler(req: Request) {
   // Handle CORS
   if (req.method === 'OPTIONS') {
@@ -42,7 +45,7 @@ export default async function handler(req: Request) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    const model = genAI.getGenerativeModel({ model: MODEL });
 
     const levelGuide: Record<string, string> = {
       child: 'Explain like talking to a curious 8 year old. Use simple words and fun comparisons.',
@@ -66,8 +69,32 @@ Generate an educational annotation. RESPOND WITH VALID JSON ONLY:
 
     const result = await model.generateContent(prompt);
     const text = result.response.text();
+    
+    console.log('=== ANNOTATE RAW RESPONSE ===');
+    console.log(text);
+    console.log('=== END ===');
+    
     const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
-    const annotation = JSON.parse(cleaned);
+    
+    let annotation;
+    try {
+      annotation = JSON.parse(cleaned);
+    } catch (parseError) {
+      return new Response(
+        JSON.stringify({
+          error: 'Failed to parse Gemini response',
+          rawResponse: text,
+          parseError: parseError instanceof Error ? parseError.message : 'Unknown',
+        }),
+        {
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        }
+      );
+    }
 
     return new Response(JSON.stringify(annotation), {
       headers: {
@@ -77,14 +104,15 @@ Generate an educational annotation. RESPOND WITH VALID JSON ONLY:
     });
   } catch (error) {
     console.error('Annotate error:', error);
+    // NO FALLBACK - show real error
     return new Response(
       JSON.stringify({
-        title: 'Interesting Object',
-        explanation: 'This is an interesting object to explore.',
-        funFact: 'Every object has a story to tell!',
-        relatedTopics: ['exploration', 'learning', 'discovery'],
+        error: 'Annotation failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
       }),
       {
+        status: 500,
         headers: {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',
