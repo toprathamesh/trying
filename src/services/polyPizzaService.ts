@@ -28,6 +28,23 @@ export interface SearchResult {
 // Base URL for the new Khronos Sample Assets repo
 const BASE_URL = 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models';
 
+/**
+ * Proxy external URLs through our backend to avoid CORS issues
+ * Poly Pizza models need to be proxied, GitHub models work directly
+ */
+function proxyUrl(url: string): string {
+  // GitHub URLs work directly (CORS enabled)
+  if (url.includes('raw.githubusercontent.com')) {
+    return url;
+  }
+  // Poly Pizza URLs need to be proxied
+  if (url.includes('static.poly.pizza')) {
+    return `/api/proxy-model?url=${encodeURIComponent(url)}`;
+  }
+  // Unknown URLs - try to proxy
+  return `/api/proxy-model?url=${encodeURIComponent(url)}`;
+}
+
 // Helper to create model entry
 const model = (name: string, displayName?: string, category?: string): PolyPizzaModel => ({
   id: name.toLowerCase(),
@@ -198,7 +215,12 @@ export class PolyPizzaService {
         const data = await response.json();
         if (data.models && data.models.length > 0) {
           console.log(`✅ Poly Pizza found: ${data.models[0].title}`);
-          return data;
+          // Proxy the download URLs to avoid CORS
+          const proxiedModels = data.models.map((m: PolyPizzaModel) => ({
+            ...m,
+            downloadUrl: proxyUrl(m.downloadUrl)
+          }));
+          return { ...data, models: proxiedModels };
         }
       }
       console.log(`⚠️ Poly Pizza returned no results, trying fallback...`);
