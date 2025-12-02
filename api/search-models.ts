@@ -2,9 +2,10 @@
  * Poly Pizza API Proxy
  * 
  * This runs on Vercel's server, so no CORS issues!
- * The API is FREE for hobby use.
+ * FREE tier: 3000 requests/month
  * 
  * Poly Pizza has 10,400+ CC0 3D models from Google Poly archive + more
+ * Get your free API key at: https://poly.pizza/settings/api
  */
 
 export const config = {
