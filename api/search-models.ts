@@ -65,17 +65,16 @@ export default async function handler(req: Request) {
     // Get API key from environment
     const apiKey = process.env.POLY_PIZZA_API_KEY;
     if (!apiKey) {
-      console.log('⚠️ POLY_PIZZA_API_KEY not configured, using fallback models');
+      console.log('⚠️ POLY_PIZZA_API_KEY not configured');
       return new Response(
         JSON.stringify({ 
-          error: 'Poly Pizza API key not configured',
-          message: 'Add POLY_PIZZA_API_KEY to your Vercel environment variables. Get a free key at https://poly.pizza/settings/api',
           models: [],
           total: 0,
-          query
+          query,
+          _note: 'No API key configured'
         }),
         {
-          status: 200, // Return 200 so frontend uses fallback
+          status: 200,
           headers: { 
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*',
@@ -84,26 +83,36 @@ export default async function handler(req: Request) {
       );
     }
 
-    // Call Poly Pizza API v1.1 from server (no CORS!)
-    const apiUrl = `https://api.poly.pizza/v1.1/search?q=${encodeURIComponent(query)}&limit=${limit}`;
+    // Call Poly Pizza API v1.1 from server
+    const apiUrl = `https://api.poly.pizza/v1.1/search?Keyword=${encodeURIComponent(query)}`;
+    console.log(`📡 Calling: ${apiUrl}`);
+    console.log(`🔑 API Key length: ${apiKey.length}`);
     
     const response = await fetch(apiUrl, {
+      method: 'GET',
       headers: {
         'Accept': 'application/json',
-        'x-auth-token': apiKey,
+        'x-auth-token': apiKey.trim(),
       },
     });
 
+    const responseText = await response.text();
+    console.log(`📥 Response status: ${response.status}`);
+    console.log(`📥 Response body: ${responseText.substring(0, 500)}`);
+
     if (!response.ok) {
-      console.error(`Poly Pizza API error: ${response.status}`);
+      console.error(`Poly Pizza API error: ${response.status} - ${responseText}`);
+      // Return empty result so frontend uses fallback
       return new Response(
         JSON.stringify({ 
-          error: 'Poly Pizza API error', 
-          status: response.status,
-          message: await response.text()
+          models: [],
+          total: 0,
+          query,
+          _error: `Poly Pizza returned ${response.status}`,
+          _details: responseText.substring(0, 200)
         }),
         {
-          status: response.status,
+          status: 200, // Return 200 so frontend gracefully falls back
           headers: { 
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*',
@@ -112,19 +121,37 @@ export default async function handler(req: Request) {
       );
     }
 
-    const data: PolyPizzaResponse = await response.json();
+    let data: any;
+    try {
+      data = JSON.parse(responseText);
+    } catch (e) {
+      console.error('Failed to parse Poly Pizza response:', responseText);
+      return new Response(
+        JSON.stringify({ models: [], total: 0, query }),
+        {
+          status: 200,
+          headers: { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        }
+      );
+    }
     
-    console.log(`✅ Found ${data.results?.length || 0} models`);
+    console.log(`✅ Found ${data.results?.length || data.Results?.length || 0} models`);
 
-    // Transform to our format
-    const models = (data.results || []).map((item: PolyPizzaResult) => ({
-      id: item.id,
-      title: item.title,
-      author: item.creator?.username || 'Unknown',
-      downloadUrl: item.download,
-      thumbnail: item.thumbnail,
+    // Transform to our format (handle both v1 and v1.1 response formats)
+    const results = data.results || data.Results || [];
+    const models = results.map((item: any) => ({
+      id: item.id || item.ID || item.Slug,
+      title: item.title || item.Title || item.Name || 'Untitled',
+      author: item.creator?.username || item.Creator?.Username || item.Author || 'Unknown',
+      downloadUrl: item.download || item.Download || item.DownloadUrl,
+      thumbnail: item.thumbnail || item.Thumbnail || '',
       license: 'CC0',
-    })).filter((m: any) => m.downloadUrl); // Only include models with download URLs
+    })).filter((m: any) => m.downloadUrl);
+    
+    console.log(`📦 Processed ${models.length} models with download URLs`);
 
     return new Response(JSON.stringify({
       models,
