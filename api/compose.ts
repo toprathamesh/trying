@@ -6,8 +6,8 @@ export const config = {
 
 // Models to try in order (fallback if one is overloaded)
 const MODELS_TO_TRY = [
-  'gemini-2.5-flash-lite-preview-06-17',  // Fast, user requested
-  'gemini-2.0-flash',                      // Fallback
+  'gemini-2.5-flash-lite-preview-09-2025',  // Latest fast model
+  'gemini-2.0-flash',                        // Fallback
 ];
 
 export default async function handler(req: Request) {
