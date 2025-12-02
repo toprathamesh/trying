@@ -333,7 +333,7 @@ function App() {
                 key={i}
                 onClick={() => {
                   setInputValue(s);
-                  setTimeout(handleCompose, 50);
+                  setTimeout(() => handleCompose(s), 50);
                 }}
                 style={{
                   background: 'rgba(255, 255, 255, 0.08)',
@@ -476,7 +476,7 @@ function App() {
             onKeyDown={(e) => e.key === 'Enter' && handleCompose()}
           />
           <button 
-            onClick={handleCompose}
+            onClick={() => handleCompose()}
             disabled={isLoading || !inputValue.trim()}
             style={{ 
               padding: '14px 28px', 

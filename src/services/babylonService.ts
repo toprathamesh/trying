@@ -71,24 +71,24 @@ export class BabylonSceneManager {
     this.camera.angularSensibility = 2000;
     this.camera.minZ = 0.1;
     
-    // Ground - green grass
+    // Ground - natural green grass (smooth, no grid)
     const ground = BABYLON.MeshBuilder.CreateGround(
       "ground", 
-      { width: 200, height: 200, subdivisions: 50 }, 
+      { width: 200, height: 200, subdivisions: 1 }, // Smooth surface, no subdivisions
       this.scene
     );
     
-    // Create ground material - green grass color
+    // Create ground material - natural grass green color
     const groundMaterial = new BABYLON.StandardMaterial("groundMat", this.scene);
-    groundMaterial.diffuseColor = new BABYLON.Color3(0.2, 0.6, 0.3); // Green grass
-    groundMaterial.specularColor = new BABYLON.Color3(0.1, 0.3, 0.15);
-    groundMaterial.emissiveColor = new BABYLON.Color3(0.05, 0.15, 0.08); // Subtle green glow
+    // Natural grass green: RGB(76, 175, 80) = #4CAF50
+    groundMaterial.diffuseColor = new BABYLON.Color3(0.298, 0.686, 0.314); // Natural grass green
+    groundMaterial.specularColor = new BABYLON.Color3(0.05, 0.15, 0.08); // Low specular for matte grass
+    groundMaterial.emissiveColor = new BABYLON.Color3(0.02, 0.05, 0.02); // Very subtle green tint
     ground.material = groundMaterial;
     ground.checkCollisions = true;
     ground.receiveShadows = true;
     
-    // Grid overlay for visual reference
-    this.addGridOverlay();
+    // No grid overlay - plain natural grass
     
     // Fog for depth - sky blue fog
     this.scene.fogMode = BABYLON.Scene.FOGMODE_EXP2;
