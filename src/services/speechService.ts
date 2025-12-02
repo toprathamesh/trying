@@ -253,39 +253,72 @@ class SpeechService {
         return;
       }
 
+      // CRITICAL: Stop any existing recognition FIRST to prevent overlap
       if (this.isListening) {
-        reject(new Error('Already listening'));
-        return;
+        this.recognition.abort();
+        this.isListening = false;
+        // Wait a tiny bit for cleanup
+        setTimeout(() => {
+          this.startListening(resolve, reject);
+        }, 100);
+      } else {
+        this.startListening(resolve, reject);
       }
-
-      // Stop any current speech output first
-      this.stop();
-
-      this.isListening = true;
-      console.log('🎤 Listening...');
-
-      this.recognition.onresult = (event: SpeechRecognitionEvent) => {
-        const result = event.results[0];
-        if (result && result.isFinal) {
-          const transcript = result[0].transcript;
-          console.log('🎤 Heard:', transcript);
-          this.isListening = false;
-          resolve(transcript);
-        }
-      };
-
-      this.recognition.onerror = (event: Event) => {
-        console.error('🎤 Error:', event);
-        this.isListening = false;
-        reject(new Error('Speech recognition error'));
-      };
-
-      this.recognition.onend = () => {
-        this.isListening = false;
-      };
-
-      this.recognition.start();
     });
+  }
+
+  /**
+   * Internal method to start listening
+   */
+  private startListening(resolve: (text: string) => void, reject: (error: Error) => void): void {
+    if (!this.recognition) {
+      reject(new Error('Speech recognition not supported'));
+      return;
+    }
+
+    // Stop any current speech output first
+    this.stop();
+
+    // Clear any old handlers
+    this.recognition.onresult = null;
+    this.recognition.onerror = null;
+    this.recognition.onend = null;
+
+    this.isListening = true;
+    console.log('🎤 Listening...');
+
+    this.recognition.onresult = (event: SpeechRecognitionEvent) => {
+      const result = event.results[0];
+      if (result && result.isFinal) {
+        const transcript = result[0].transcript.trim();
+        console.log('🎤 Heard:', transcript);
+        this.isListening = false;
+        resolve(transcript);
+      }
+    };
+
+    this.recognition.onerror = (event: Event) => {
+      const errorEvent = event as any;
+      // Ignore "interrupted" errors - they're normal when stopping
+      if (errorEvent.error !== 'aborted' && errorEvent.error !== 'no-speech') {
+        console.error('🎤 Error:', errorEvent.error);
+      }
+      this.isListening = false;
+      if (errorEvent.error !== 'aborted') {
+        reject(new Error('Speech recognition error'));
+      }
+    };
+
+    this.recognition.onend = () => {
+      this.isListening = false;
+    };
+
+    try {
+      this.recognition.start();
+    } catch (error) {
+      this.isListening = false;
+      reject(new Error('Failed to start recognition'));
+    }
   }
 
   /**

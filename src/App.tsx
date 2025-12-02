@@ -48,6 +48,11 @@ function App() {
   const handleCompose = useCallback(async () => {
     if (!inputValue.trim() || !viewerRef.current) return;
     
+    // Stop any ongoing voice recognition or speech
+    speechService.stopListening();
+    speechService.stop();
+    setIsListening(false);
+    
     setIsLoading(true);
     setShowAnnotation(false);
     setCurrentAnnotation(null);
@@ -162,27 +167,38 @@ function App() {
       return;
     }
     
-    if (isListening) {
-      speechService.stopListening();
-      setIsListening(false);
+    // Prevent multiple simultaneous voice inputs
+    if (isListening || isLoading) {
+      if (isListening) {
+        speechService.stopListening();
+        setIsListening(false);
+      }
       return;
     }
     
     try {
       setIsListening(true);
+      // Stop any current speech output
+      speechService.stop();
+      
       const transcript = await speechService.listen();
-      setInputValue(transcript);
       setIsListening(false);
       
-      // Auto-submit after voice input
-      setTimeout(() => {
-        handleCompose();
-      }, 300);
+      if (transcript && transcript.trim()) {
+        setInputValue(transcript.trim());
+        
+        // Auto-submit after voice input (only if not already loading)
+        if (!isLoading) {
+          setTimeout(() => {
+            handleCompose();
+          }, 300);
+        }
+      }
     } catch (error) {
       console.error('Voice input error:', error);
       setIsListening(false);
     }
-  }, [isListening, handleCompose]);
+  }, [isListening, isLoading, handleCompose]);
 
   // Hide controls after initial period
   useEffect(() => {

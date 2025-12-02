@@ -42,26 +42,27 @@ export class BabylonSceneManager {
   }
   
   private setupScene(canvas: HTMLCanvasElement) {
-    // Clear color - dark with subtle blue
-    this.scene.clearColor = new BABYLON.Color4(0.02, 0.02, 0.05, 1);
+    // Sky blue background
+    this.scene.clearColor = new BABYLON.Color4(0.53, 0.81, 0.98, 1); // Sky blue
     
-    // Main hemispheric light
+    // Main hemispheric light - brighter for outdoor scene
     const hemiLight = new BABYLON.HemisphericLight(
       "hemiLight", 
       new BABYLON.Vector3(0, 1, 0), 
       this.scene
     );
-    hemiLight.intensity = 0.7;
-    hemiLight.groundColor = new BABYLON.Color3(0.2, 0.2, 0.3);
+    hemiLight.intensity = 1.0;
+    hemiLight.groundColor = new BABYLON.Color3(0.3, 0.5, 0.3); // Green tint for ground reflection
     
-    // Directional light for shadows and definition
+    // Directional light (sun) for shadows and definition
     const dirLight = new BABYLON.DirectionalLight(
       "dirLight",
       new BABYLON.Vector3(-1, -2, 1),
       this.scene
     );
-    dirLight.intensity = 0.5;
+    dirLight.intensity = 0.8;
     dirLight.position = new BABYLON.Vector3(10, 20, -10);
+    dirLight.diffuse = new BABYLON.Color3(1.0, 0.95, 0.9); // Warm sunlight
     
     // Camera configuration
     this.camera.attachControl(canvas, true);
@@ -70,18 +71,18 @@ export class BabylonSceneManager {
     this.camera.angularSensibility = 2000;
     this.camera.minZ = 0.1;
     
-    // Ground - modern gradient look
+    // Ground - green grass
     const ground = BABYLON.MeshBuilder.CreateGround(
       "ground", 
       { width: 200, height: 200, subdivisions: 50 }, 
       this.scene
     );
     
-    // Create ground material with gradient effect
+    // Create ground material - green grass color
     const groundMaterial = new BABYLON.StandardMaterial("groundMat", this.scene);
-    groundMaterial.diffuseColor = new BABYLON.Color3(0.08, 0.08, 0.12);
-    groundMaterial.specularColor = new BABYLON.Color3(0.1, 0.1, 0.15);
-    groundMaterial.emissiveColor = new BABYLON.Color3(0.02, 0.02, 0.04);
+    groundMaterial.diffuseColor = new BABYLON.Color3(0.2, 0.6, 0.3); // Green grass
+    groundMaterial.specularColor = new BABYLON.Color3(0.1, 0.3, 0.15);
+    groundMaterial.emissiveColor = new BABYLON.Color3(0.05, 0.15, 0.08); // Subtle green glow
     ground.material = groundMaterial;
     ground.checkCollisions = true;
     ground.receiveShadows = true;
@@ -89,10 +90,10 @@ export class BabylonSceneManager {
     // Grid overlay for visual reference
     this.addGridOverlay();
     
-    // Fog for depth
+    // Fog for depth - sky blue fog
     this.scene.fogMode = BABYLON.Scene.FOGMODE_EXP2;
-    this.scene.fogDensity = 0.01;
-    this.scene.fogColor = new BABYLON.Color3(0.02, 0.02, 0.05);
+    this.scene.fogDensity = 0.005; // Lighter fog for outdoor scene
+    this.scene.fogColor = new BABYLON.Color3(0.53, 0.81, 0.98); // Sky blue fog
     
     // Enable collisions
     this.scene.collisionsEnabled = true;
