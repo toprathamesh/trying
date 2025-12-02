@@ -47,18 +47,27 @@ export default async function handler(req: Request) {
       });
     }
 
-    const prompt = `You are a 3D scene composer for an educational platform. Given a user's question or topic, you must create an explorable 3D scene using available 3D model assets.
+    const prompt = `You are a 3D scene composer for an educational platform. Given a user's question or topic, create an explorable 3D scene.
 
-AVAILABLE MODEL CATEGORIES (search these on Poly Pizza - a CC0 3D model library):
-- Animals: dog, cat, bird, fish, horse, elephant, lion, bear, deer, rabbit, snake, frog, bee, butterfly, eagle, owl, penguin, shark, whale, dolphin, turtle, crab, octopus, fox
-- Nature: tree, flower, plant, rock, mountain, grass, mushroom, cactus, palm tree, pine tree, bush, log, leaf
-- Buildings: house, castle, tower, church, barn, tent, lighthouse, windmill, bridge, gate, fence, wall
-- Vehicles: car, truck, bus, airplane, helicopter, boat, ship, bicycle, motorcycle, train, rocket
-- Food: apple, banana, orange, bread, cake, pizza, burger, ice cream, donut, cookie, watermelon, carrot, corn, avocado
-- Objects: chair, table, lamp, book, clock, phone, computer, tv, camera, guitar, piano, drum, ball, sword, shield, crown, treasure chest, key, lantern, candle, helmet, bottle
-- Science: microscope, telescope, globe, atom, crystal, magnet, beaker, test tube, brain
-- Fantasy: dragon, unicorn, fairy, wizard, knight, goblin, treasure
-- Sports: soccer ball, basketball, tennis racket, golf club, skateboard, surfboard
+⚠️ CRITICAL: You can ONLY use these exact model names in searchQuery. No other models exist:
+
+AVAILABLE MODELS (use these EXACT names in searchQuery):
+- fox (use for: dog, cat, wolf, any animal)
+- duck (use for: bird, chicken, any flying animal)
+- dragon (use for: fantasy creatures, dinosaurs, monsters)
+- helmet (use for: armor, warrior, battle, medieval)
+- lantern (use for: light, lamp, candle, fire)
+- avocado (use for: food, fruit, nature, plant)
+- car (use for: vehicle, transport, driving)
+- chair (use for: furniture, seat, sitting)
+- bottle (use for: water, drink, container)
+- brain (use for: science, anatomy, biology, organ)
+- boombox (use for: music, sound, radio, speaker)
+- monkey (use for: ape, primate, animal)
+- sponza (use for: building, palace, architecture, room)
+- flight_helmet (use for: pilot, aviation, flying)
+- corset (use for: fashion, clothing)
+- cloth (use for: fabric, textile, material)
 
 USER QUERY: "${query}"
 
@@ -68,7 +77,7 @@ RESPOND WITH VALID JSON ONLY (no markdown, no backticks):
   "description": "Educational description of what's being shown (2-3 sentences)",
   "elements": [
     {
-      "searchQuery": "exact search term for Poly Pizza (simple, 1-2 words)",
+      "searchQuery": "MUST be one of: fox, duck, dragon, helmet, lantern, avocado, car, chair, bottle, brain, boombox, monkey, sponza, flight_helmet, corset, cloth",
       "name": "Display name for this element",
       "description": "Brief educational description",
       "position": { "x": 0, "y": 0, "z": 5 },
@@ -89,10 +98,11 @@ POSITIONING RULES:
 - Face objects toward camera start position when relevant
 
 IMPORTANT:
-- Create 1-5 elements maximum for performance
-- Search queries should be SIMPLE words that will find 3D models
-- Be educational but visually interesting
-- Think like a museum curator or science exhibit designer`;
+- searchQuery MUST be exactly one of the 16 available model names listed above
+- Create 1-5 elements maximum
+- Be creative with positioning and scale to tell a story
+- If the user asks for something not in the list, use the closest available model
+- Example: "show me a dog" → use "fox", "show me a tree" → use "avocado"`;
 
     const genAI = new GoogleGenerativeAI(apiKey);
     
