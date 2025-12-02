@@ -49,32 +49,18 @@ export default async function handler(req: Request) {
 
     const prompt = `You are a 3D scene composer for an educational platform. Create an explorable 3D scene.
 
-⚠️ CRITICAL: You can ONLY use these exact model names in searchQuery:
+You have access to Poly Pizza API with 10,400+ free 3D models! Use simple, common search terms.
 
-AVAILABLE MODELS:
-ANIMALS: fox, duck, fish, mosquito
-PEOPLE: man, person, figure (walking human)
-VEHICLES: car, truck
-FURNITURE: chair, sofa, couch, ottoman
-NATURE: plant, flower, flowers, vase
-FOOD: avocado, orange, fruit, olives
-LIGHTING: lantern, lamp, candle
-OBJECTS: bottle, camera, watch, clock, shoe, sunglasses, boombox, radio, pot, window, refrigerator
-HELMETS: helmet, flight_helmet, scifi_helmet, armor
-FANTASY: dragon
-SCIENCE: brain, skull, anatomy
-ARCHITECTURE: sponza, palace, building
-OTHER: monkey, corset, cloth, fabric
-
-MAPPING HINTS (use these when user asks for something not in list):
-- dog/cat/wolf → fox
-- bird/chicken → duck
-- tree/nature → plant
-- time → watch
-- food → avocado or orange
-- monster/dinosaur → dragon
-- soldier/knight/warrior → helmet
-- room/interior → sponza
+SEARCH TIPS (use simple 1-2 word searches):
+- Animals: dog, cat, fox, bird, fish, horse, elephant, lion, bear, deer, rabbit, snake, frog, butterfly, eagle, owl, penguin, shark, whale, dolphin, turtle
+- Nature: tree, flower, plant, rock, mountain, grass, mushroom, cactus, palm tree, bush
+- Buildings: house, castle, tower, church, barn, tent, lighthouse, windmill, bridge
+- Vehicles: car, truck, bus, airplane, helicopter, boat, ship, bicycle, motorcycle, train, rocket
+- Food: apple, banana, orange, bread, cake, pizza, burger, ice cream, donut, cookie
+- Furniture: chair, table, lamp, bed, sofa, desk, bookshelf, cabinet
+- Objects: book, clock, phone, computer, tv, camera, guitar, piano, ball, sword, shield, crown, key, lantern
+- Science: microscope, telescope, globe, beaker, test tube
+- Fantasy: dragon, unicorn, wizard, knight, goblin, treasure
 
 USER QUERY: "${query}"
 
@@ -84,8 +70,8 @@ RESPOND WITH VALID JSON ONLY (no markdown, no backticks):
   "description": "Educational description (2-3 sentences)",
   "elements": [
     {
-      "searchQuery": "MUST be from the available models list above",
-      "name": "Display name",
+      "searchQuery": "simple 1-2 word search term (e.g. 'dog', 'red car', 'oak tree')",
+      "name": "Display name for the object",
       "description": "Brief educational description",
       "position": { "x": 0, "y": 0, "z": 5 },
       "scale": 1.0,
@@ -105,11 +91,10 @@ POSITIONING RULES:
 - Face objects toward camera start position when relevant
 
 IMPORTANT:
-- searchQuery MUST be exactly one of the 16 available model names listed above
-- Create 1-5 elements maximum
+- Use simple, common search terms (1-2 words work best)
+- Create 1-5 elements maximum for performance
 - Be creative with positioning and scale to tell a story
-- If the user asks for something not in the list, use the closest available model
-- Example: "show me a dog" → use "fox", "show me a tree" → use "avocado"`;
+- Think like a museum curator designing an educational exhibit`;
 
     const genAI = new GoogleGenerativeAI(apiKey);
     

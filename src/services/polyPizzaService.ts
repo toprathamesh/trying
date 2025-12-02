@@ -1,10 +1,12 @@
 /**
  * 3D Model Service
  * 
- * Uses Khronos glTF-Sample-Assets (CC0 license) - 100+ free models!
- * No external API needed - all models are hosted on GitHub.
+ * Primary: Poly Pizza API (10,400+ CC0 models) via backend proxy
+ * Fallback: Khronos glTF-Sample-Assets (100+ free models)
  * 
- * Source: https://github.com/KhronosGroup/glTF-Sample-Assets
+ * Sources:
+ * - https://poly.pizza (Google Poly archive + more)
+ * - https://github.com/KhronosGroup/glTF-Sample-Assets
  */
 
 export interface PolyPizzaModel {
@@ -180,14 +182,43 @@ const WORD_MAPPINGS: Record<string, string> = {
 
 export class PolyPizzaService {
   /**
-   * Search for 3D models - uses local library only (no API calls)
+   * Search for 3D models
+   * 1. Try Poly Pizza API (via backend proxy) - 10,400+ models
+   * 2. Fall back to local Khronos models if API fails
    */
-  async search(query: string, _limit: number = 5): Promise<SearchResult> {
-    const normalizedQuery = query.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+  async search(query: string, limit: number = 1): Promise<SearchResult> {
+    const normalizedQuery = query.toLowerCase().trim();
+    
+    // Try Poly Pizza API first (via our backend proxy - no CORS issues)
+    try {
+      console.log(`🔍 Searching Poly Pizza for: ${normalizedQuery}`);
+      const response = await fetch(`/api/search-models?q=${encodeURIComponent(normalizedQuery)}&limit=${limit}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.models && data.models.length > 0) {
+          console.log(`✅ Poly Pizza found: ${data.models[0].title}`);
+          return data;
+        }
+      }
+      console.log(`⚠️ Poly Pizza returned no results, trying fallback...`);
+    } catch (error) {
+      console.log(`⚠️ Poly Pizza API unavailable, using fallback:`, error);
+    }
+    
+    // Fallback to local Khronos models
+    return this.searchFallback(normalizedQuery);
+  }
+  
+  /**
+   * Search local Khronos models (fallback)
+   */
+  private searchFallback(query: string): SearchResult {
+    const normalizedQuery = query.replace(/[^a-z0-9]/g, '');
     
     // Direct match
     if (AVAILABLE_MODELS[normalizedQuery]) {
-      console.log(`✅ Direct match: ${normalizedQuery}`);
+      console.log(`✅ Fallback direct match: ${normalizedQuery}`);
       return {
         models: [AVAILABLE_MODELS[normalizedQuery]],
         total: 1,
@@ -198,7 +229,7 @@ export class PolyPizzaService {
     // Check word mappings
     if (WORD_MAPPINGS[normalizedQuery] && AVAILABLE_MODELS[WORD_MAPPINGS[normalizedQuery]]) {
       const mappedKey = WORD_MAPPINGS[normalizedQuery];
-      console.log(`✅ Mapped: ${normalizedQuery} → ${mappedKey}`);
+      console.log(`✅ Fallback mapped: ${normalizedQuery} → ${mappedKey}`);
       return {
         models: [AVAILABLE_MODELS[mappedKey]],
         total: 1,
@@ -209,7 +240,7 @@ export class PolyPizzaService {
     // Partial match in model names
     for (const key in AVAILABLE_MODELS) {
       if (key.includes(normalizedQuery) || normalizedQuery.includes(key)) {
-        console.log(`✅ Partial match: ${normalizedQuery} ≈ ${key}`);
+        console.log(`✅ Fallback partial: ${normalizedQuery} ≈ ${key}`);
         return {
           models: [AVAILABLE_MODELS[key]],
           total: 1,
@@ -223,7 +254,7 @@ export class PolyPizzaService {
       if (word.includes(normalizedQuery) || normalizedQuery.includes(word)) {
         const mappedKey = WORD_MAPPINGS[word];
         if (AVAILABLE_MODELS[mappedKey]) {
-          console.log(`✅ Partial mapping: ${normalizedQuery} ≈ ${word} → ${mappedKey}`);
+          console.log(`✅ Fallback partial mapping: ${normalizedQuery} ≈ ${word} → ${mappedKey}`);
           return {
             models: [AVAILABLE_MODELS[mappedKey]],
             total: 1,
@@ -233,8 +264,8 @@ export class PolyPizzaService {
       }
     }
     
-    // No match - return fox as default (it's a nice model)
-    console.warn(`⚠️ No model found for "${query}", using fox as default`);
+    // No match - return fox as default
+    console.warn(`⚠️ No fallback model for "${query}", using fox`);
     return {
       models: [AVAILABLE_MODELS['fox']],
       total: 1,
