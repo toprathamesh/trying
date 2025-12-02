@@ -93,7 +93,8 @@ export class SceneComposer {
             loaded: false
           });
         } else {
-          console.log(`⚠️ No model found for: ${element.searchQuery}`);
+          // No fallback - just skip this element and log the error
+          console.warn(`❌ Skipping element "${element.name}": ${searchResult.error || 'No model found for: ' + element.searchQuery}`);
         }
         
         // Update progress
@@ -195,10 +196,4 @@ export class SceneComposer {
     return this.currentScene;
   }
 
-  /**
-   * Browse available models (for library mode)
-   */
-  getAvailableModels(): PolyPizzaModel[] {
-    return this.polyPizza.getAllFallbackModels();
-  }
 }
