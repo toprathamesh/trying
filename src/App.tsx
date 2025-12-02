@@ -15,6 +15,7 @@ const sceneComposer = new SceneComposer();
 function App() {
   // Core state
   const viewerRef = useRef<BabylonViewerHandle>(null);
+  const isComposingRef = useRef(false); // Track if currently composing (prevents race conditions)
   
   // UI state
   const [inputValue, setInputValue] = useState('');
@@ -44,23 +45,36 @@ function App() {
     'Human brain anatomy'
   ]);
 
-  // Handle scene composition
-  const handleCompose = useCallback(async () => {
-    if (!inputValue.trim() || !viewerRef.current) return;
+  // Handle scene composition - accepts optional query to avoid stale state
+  const handleCompose = useCallback(async (queryOverride?: string) => {
+    const query = queryOverride || inputValue;
+    if (!query.trim() || !viewerRef.current) return;
     
     // Stop any ongoing voice recognition or speech
     speechService.stopListening();
     speechService.stop();
     setIsListening(false);
     
+    // If already composing, don't start a new composition (use ref to avoid stale closure)
+    if (isComposingRef.current) {
+      console.log('Already composing, skipping...');
+      return;
+    }
+    
+    isComposingRef.current = true;
     setIsLoading(true);
     setShowAnnotation(false);
     setCurrentAnnotation(null);
     
+    // Update input value if using override
+    if (queryOverride) {
+      setInputValue(queryOverride);
+    }
+    
     try {
       if (mode === 'compose') {
         // AI-composed scene with multiple elements
-        const scene = await sceneComposer.composeFromQuery(inputValue, (update) => {
+        const scene = await sceneComposer.composeFromQuery(query, (update) => {
           setLoadingStatus(
             update.status === 'loading' 
               ? 'Asking AI to compose your scene...'
@@ -94,7 +108,7 @@ function App() {
         setLoadingStatus('Searching for model...');
         setLoadingProgress(30);
         
-        const scene = await sceneComposer.quickCompose(inputValue);
+        const scene = await sceneComposer.quickCompose(query);
         setCurrentScene(scene);
         
         setLoadingStatus('Loading 3D model...');
@@ -109,6 +123,7 @@ function App() {
       console.error('Composition failed:', error);
       setLoadingStatus('Error: ' + (error as Error).message);
     } finally {
+      isComposingRef.current = false;
       setTimeout(() => {
         setIsLoading(false);
         setLoadingProgress(0);
@@ -167,12 +182,16 @@ function App() {
       return;
     }
     
-    // Prevent multiple simultaneous voice inputs
-    if (isListening || isLoading) {
-      if (isListening) {
-        speechService.stopListening();
-        setIsListening(false);
-      }
+    // If already listening, stop it
+    if (isListening) {
+      speechService.stopListening();
+      setIsListening(false);
+      return;
+    }
+    
+    // Don't start if already composing (let current composition finish)
+    if (isComposingRef.current) {
+      console.log('Already composing, please wait...');
       return;
     }
     
@@ -185,20 +204,22 @@ function App() {
       setIsListening(false);
       
       if (transcript && transcript.trim()) {
-        setInputValue(transcript.trim());
+        const cleanTranscript = transcript.trim();
+        console.log('🎤 Voice input received:', cleanTranscript);
         
-        // Auto-submit after voice input (only if not already loading)
-        if (!isLoading) {
-          setTimeout(() => {
-            handleCompose();
-          }, 300);
-        }
+        // Update input field
+        setInputValue(cleanTranscript);
+        
+        // Auto-submit immediately with the transcript directly (don't wait for state)
+        handleCompose(cleanTranscript);
+      } else {
+        console.log('🎤 Empty transcript, ignoring');
       }
     } catch (error) {
       console.error('Voice input error:', error);
       setIsListening(false);
     }
-  }, [isListening, isLoading, handleCompose]);
+  }, [isListening, handleCompose]);
 
   // Hide controls after initial period
   useEffect(() => {
