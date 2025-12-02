@@ -7,6 +7,7 @@ import { LoadingProgress } from './components/v2/LoadingProgress';
 import { SceneComposer } from './services/sceneComposer';
 import type { ComposedScene } from './services/sceneComposer';
 import type { ObjectAnnotation } from './services/geminiService';
+import { speechService } from './services/speechService';
 
 // Initialize scene composer (no API key needed - backend handles it)
 const sceneComposer = new SceneComposer();
@@ -29,6 +30,9 @@ function App() {
   const [annotationLoading, setAnnotationLoading] = useState(false);
   const [currentAnnotation, setCurrentAnnotation] = useState<ObjectAnnotation | null>(null);
   const [clickedObjectName, setClickedObjectName] = useState('');
+  
+  // Speech state
+  const [speechEnabled, setSpeechEnabled] = useState(true);
   
   // Suggestions
   const [suggestions, setSuggestions] = useState<string[]>([
@@ -113,20 +117,41 @@ function App() {
     setAnnotationLoading(true);
     setCurrentAnnotation(null);
     
+    // Stop any current speech
+    speechService.stop();
+    
     try {
       const annotation = await sceneComposer.annotateObject(objectName, meshName);
       setCurrentAnnotation(annotation);
+      
+      // Speak the annotation if speech is enabled
+      if (speechEnabled && annotation) {
+        speechService.speakAnnotation(annotation);
+      }
     } catch (error) {
       console.error('Annotation failed:', error);
     } finally {
       setAnnotationLoading(false);
     }
-  }, []);
+  }, [speechEnabled]);
 
   // Handle related topic click
   const handleRelatedClick = useCallback((topic: string) => {
     setInputValue(topic);
     setShowAnnotation(false);
+    speechService.stop();
+  }, []);
+  
+  // Handle annotation close
+  const handleAnnotationClose = useCallback(() => {
+    setShowAnnotation(false);
+    speechService.stop();
+  }, []);
+  
+  // Toggle speech
+  const handleSpeechToggle = useCallback(() => {
+    const newState = speechService.toggle();
+    setSpeechEnabled(newState);
   }, []);
 
   // Hide controls after initial period
@@ -169,7 +194,7 @@ function App() {
         objectName={clickedObjectName}
         visible={showAnnotation}
         loading={annotationLoading}
-        onClose={() => setShowAnnotation(false)}
+        onClose={handleAnnotationClose}
         onRelatedClick={handleRelatedClick}
       />
       
@@ -393,30 +418,63 @@ function App() {
         </p>
       </div>
 
-      {/* Toggle Controls Button */}
-      <button
-        onClick={() => setShowControls(!showControls)}
-        style={{
-          position: 'absolute',
-          bottom: 120,
-          right: 24,
-          width: 40,
-          height: 40,
-          borderRadius: 10,
-          background: 'rgba(255, 255, 255, 0.08)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          color: '#888',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '1rem',
-          zIndex: 100
-        }}
-        title="Toggle controls"
-      >
-        ?
-      </button>
+      {/* Side Buttons */}
+      <div style={{
+        position: 'absolute',
+        bottom: 120,
+        right: 24,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 8,
+        zIndex: 100
+      }}>
+        {/* Speech Toggle Button */}
+        <button
+          onClick={handleSpeechToggle}
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 10,
+            background: speechEnabled 
+              ? 'rgba(107, 138, 255, 0.2)' 
+              : 'rgba(255, 255, 255, 0.08)',
+            border: speechEnabled 
+              ? '1px solid rgba(107, 138, 255, 0.4)' 
+              : '1px solid rgba(255, 255, 255, 0.1)',
+            color: speechEnabled ? '#6B8AFF' : '#888',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '1.1rem',
+            transition: 'all 0.2s'
+          }}
+          title={speechEnabled ? 'Disable voice' : 'Enable voice'}
+        >
+          {speechEnabled ? '🔊' : '🔇'}
+        </button>
+        
+        {/* Toggle Controls Button */}
+        <button
+          onClick={() => setShowControls(!showControls)}
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 10,
+            background: 'rgba(255, 255, 255, 0.08)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            color: '#888',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '1rem'
+          }}
+          title="Toggle controls"
+        >
+          ?
+        </button>
+      </div>
 
       {/* Import Google Font */}
       <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
