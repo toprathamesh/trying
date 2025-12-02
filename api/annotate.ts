@@ -4,8 +4,8 @@ export const config = {
   runtime: 'edge',
 };
 
-// Annotation is a simple task - use the fastest model
-const MODEL = 'gemini-2.5-flash-lite';
+// Use stable model
+const MODEL = 'gemini-2.0-flash';
 
 export default async function handler(req: Request) {
   // Handle CORS
