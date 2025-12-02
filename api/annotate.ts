@@ -4,8 +4,8 @@ export const config = {
   runtime: 'edge',
 };
 
-// Use stable model
-const MODEL = 'gemini-2.0-flash';
+// Fast model for quick annotations
+const MODEL = 'gemini-2.5-flash-lite-preview-06-17';
 
 export default async function handler(req: Request) {
   // Handle CORS
