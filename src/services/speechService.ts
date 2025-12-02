@@ -7,7 +7,6 @@
 
 class SpeechService {
   private synthesis: SpeechSynthesis;
-  private currentUtterance: SpeechSynthesisUtterance | null = null;
   private enabled: boolean = true;
   private voice: SpeechSynthesisVoice | null = null;
   private rate: number = 1.0;
@@ -79,16 +78,13 @@ class SpeechService {
     utterance.volume = 1.0;
 
     utterance.onend = () => {
-      this.currentUtterance = null;
       onEnd?.();
     };
 
     utterance.onerror = (event) => {
       console.warn('Speech error:', event.error);
-      this.currentUtterance = null;
     };
 
-    this.currentUtterance = utterance;
     this.synthesis.speak(utterance);
   }
 
@@ -111,7 +107,6 @@ class SpeechService {
     if (this.synthesis.speaking) {
       this.synthesis.cancel();
     }
-    this.currentUtterance = null;
   }
 
   /**
