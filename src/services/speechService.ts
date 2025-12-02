@@ -1,20 +1,83 @@
 /**
- * Speech Service - Text-to-Speech using Web Speech API
+ * Speech Service - Text-to-Speech & Speech-to-Text
  * 
  * Free, built into all modern browsers!
- * Reads AI explanations aloud for a more immersive experience.
+ * - Reads AI explanations aloud (Text-to-Speech)
+ * - Listens to voice commands (Speech-to-Text)
  */
+
+// Speech Recognition types
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionResultList {
+  readonly length: number;
+  item(index: number): SpeechRecognitionResult;
+  [index: number]: SpeechRecognitionResult;
+}
+
+interface SpeechRecognitionResult {
+  readonly length: number;
+  readonly isFinal: boolean;
+  item(index: number): SpeechRecognitionAlternative;
+  [index: number]: SpeechRecognitionAlternative;
+}
+
+interface SpeechRecognitionAlternative {
+  readonly transcript: string;
+  readonly confidence: number;
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: Event) => void) | null;
+  onend: (() => void) | null;
+  start(): void;
+  stop(): void;
+  abort(): void;
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition: new () => SpeechRecognition;
+    webkitSpeechRecognition: new () => SpeechRecognition;
+  }
+}
 
 class SpeechService {
   private synthesis: SpeechSynthesis;
+  private recognition: SpeechRecognition | null = null;
   private enabled: boolean = true;
   private voice: SpeechSynthesisVoice | null = null;
   private rate: number = 1.0;
   private pitch: number = 1.0;
+  private isListening: boolean = false;
 
   constructor() {
     this.synthesis = window.speechSynthesis;
     this.loadPreferredVoice();
+    this.initRecognition();
+  }
+
+  /**
+   * Initialize speech recognition
+   */
+  private initRecognition(): void {
+    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (SpeechRecognitionAPI) {
+      this.recognition = new SpeechRecognitionAPI();
+      this.recognition.continuous = false;
+      this.recognition.interimResults = false;
+      this.recognition.lang = 'en-US';
+      console.log('🎤 Speech recognition available');
+    } else {
+      console.warn('🎤 Speech recognition not supported in this browser');
+    }
   }
 
   /**
@@ -168,6 +231,78 @@ class SpeechService {
       this.voice = voice;
       console.log(`🔊 Voice changed to: ${name}`);
     }
+  }
+
+  // ==================== VOICE INPUT ====================
+
+  /**
+   * Check if voice input is supported
+   */
+  isRecognitionSupported(): boolean {
+    return this.recognition !== null;
+  }
+
+  /**
+   * Start listening for voice input
+   * Returns a promise that resolves with the spoken text
+   */
+  listen(): Promise<string> {
+    return new Promise((resolve, reject) => {
+      if (!this.recognition) {
+        reject(new Error('Speech recognition not supported'));
+        return;
+      }
+
+      if (this.isListening) {
+        reject(new Error('Already listening'));
+        return;
+      }
+
+      // Stop any current speech output first
+      this.stop();
+
+      this.isListening = true;
+      console.log('🎤 Listening...');
+
+      this.recognition.onresult = (event: SpeechRecognitionEvent) => {
+        const result = event.results[0];
+        if (result && result.isFinal) {
+          const transcript = result[0].transcript;
+          console.log('🎤 Heard:', transcript);
+          this.isListening = false;
+          resolve(transcript);
+        }
+      };
+
+      this.recognition.onerror = (event: Event) => {
+        console.error('🎤 Error:', event);
+        this.isListening = false;
+        reject(new Error('Speech recognition error'));
+      };
+
+      this.recognition.onend = () => {
+        this.isListening = false;
+      };
+
+      this.recognition.start();
+    });
+  }
+
+  /**
+   * Stop listening
+   */
+  stopListening(): void {
+    if (this.recognition && this.isListening) {
+      this.recognition.abort();
+      this.isListening = false;
+    }
+  }
+
+  /**
+   * Check if currently listening
+   */
+  getIsListening(): boolean {
+    return this.isListening;
   }
 }
 

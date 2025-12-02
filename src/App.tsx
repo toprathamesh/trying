@@ -33,6 +33,7 @@ function App() {
   
   // Speech state
   const [speechEnabled, setSpeechEnabled] = useState(true);
+  const [isListening, setIsListening] = useState(false);
   
   // Suggestions
   const [suggestions, setSuggestions] = useState<string[]>([
@@ -148,11 +149,40 @@ function App() {
     speechService.stop();
   }, []);
   
-  // Toggle speech
+  // Toggle speech output
   const handleSpeechToggle = useCallback(() => {
     const newState = speechService.toggle();
     setSpeechEnabled(newState);
   }, []);
+  
+  // Voice input - listen for commands
+  const handleVoiceInput = useCallback(async () => {
+    if (!speechService.isRecognitionSupported()) {
+      alert('Voice input is not supported in this browser. Try Chrome!');
+      return;
+    }
+    
+    if (isListening) {
+      speechService.stopListening();
+      setIsListening(false);
+      return;
+    }
+    
+    try {
+      setIsListening(true);
+      const transcript = await speechService.listen();
+      setInputValue(transcript);
+      setIsListening(false);
+      
+      // Auto-submit after voice input
+      setTimeout(() => {
+        handleCompose();
+      }, 300);
+    } catch (error) {
+      console.error('Voice input error:', error);
+      setIsListening(false);
+    }
+  }, [isListening, handleCompose]);
 
   // Hide controls after initial period
   useEffect(() => {
@@ -360,13 +390,41 @@ function App() {
           border: '1px solid rgba(255, 255, 255, 0.1)',
           boxShadow: '0 20px 60px rgba(0, 0, 0, 0.4)'
         }}>
+          {/* Microphone Button */}
+          <button
+            onClick={handleVoiceInput}
+            disabled={isLoading}
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: 12,
+              background: isListening 
+                ? 'linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%)' 
+                : 'rgba(255, 255, 255, 0.1)',
+              border: 'none',
+              color: 'white',
+              cursor: isLoading ? 'default' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '1.2rem',
+              transition: 'all 0.2s',
+              animation: isListening ? 'pulse 1s infinite' : 'none'
+            }}
+            title={isListening ? 'Stop listening' : 'Voice input'}
+          >
+            🎤
+          </button>
+          
           <input 
             type="text" 
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder={mode === 'compose' 
-              ? "What would you like to explore? (e.g., 'The solar system')"
-              : "Search for a 3D model (e.g., 'fox', 'car', 'dragon')"
+            placeholder={isListening 
+              ? "Listening..."
+              : mode === 'compose' 
+                ? "What would you like to explore? (e.g., 'The solar system')"
+                : "Search for a 3D model (e.g., 'fox', 'car', 'dragon')"
             }
             style={{
               flex: 1,
