@@ -12,18 +12,19 @@ export const config = {
   runtime: 'edge',
 };
 
+// Poly Pizza v1.1 uses PascalCase for all fields
 interface PolyPizzaResult {
-  id: string;
-  title: string;
-  creator?: { username: string };
-  thumbnail?: string;
-  download?: string;  // Direct GLB download URL
+  ID: string;
+  Title: string;
+  Creator?: { Username: string };
+  Thumbnail?: string;
+  Download?: string;  // Direct GLB download URL
+  Category?: string;
 }
 
 interface PolyPizzaResponse {
+  total: number;
   results: PolyPizzaResult[];
-  count: number;
-  next?: string;
 }
 
 export default async function handler(req: Request) {
@@ -83,10 +84,10 @@ export default async function handler(req: Request) {
       );
     }
 
-    // Call Poly Pizza API v1.1 from server
-    const apiUrl = `https://api.poly.pizza/v1.1/search?Keyword=${encodeURIComponent(query)}`;
+    // Call Poly Pizza API v1.1 - keyword goes in PATH, not query string!
+    // Endpoint: /search/{keyword}?Limit=N
+    const apiUrl = `https://api.poly.pizza/v1.1/search/${encodeURIComponent(query)}?Limit=${limit}`;
     console.log(`📡 Calling: ${apiUrl}`);
-    console.log(`🔑 API Key length: ${apiKey.length}`);
     
     const response = await fetch(apiUrl, {
       method: 'GET',
@@ -138,18 +139,19 @@ export default async function handler(req: Request) {
       );
     }
     
-    console.log(`✅ Found ${data.results?.length || data.Results?.length || 0} models`);
+    console.log(`✅ Poly Pizza returned ${data.total || 0} total, ${data.results?.length || 0} in this page`);
 
-    // Transform to our format (handle both v1 and v1.1 response formats)
-    const results = data.results || data.Results || [];
-    const models = results.map((item: any) => ({
-      id: item.id || item.ID || item.Slug,
-      title: item.title || item.Title || item.Name || 'Untitled',
-      author: item.creator?.username || item.Creator?.Username || item.Author || 'Unknown',
-      downloadUrl: item.download || item.Download || item.DownloadUrl,
-      thumbnail: item.thumbnail || item.Thumbnail || '',
+    // Transform v1.1 response (PascalCase) to our format (camelCase)
+    const results = data.results || [];
+    const models = results.map((item: PolyPizzaResult) => ({
+      id: item.ID,
+      title: item.Title || 'Untitled',
+      author: item.Creator?.Username || 'Unknown',
+      downloadUrl: item.Download,
+      thumbnail: item.Thumbnail || '',
       license: 'CC0',
-    })).filter((m: any) => m.downloadUrl);
+      category: item.Category
+    })).filter((m) => m.downloadUrl);
     
     console.log(`📦 Processed ${models.length} models with download URLs`);
 
