@@ -4,11 +4,8 @@ export const config = {
   runtime: 'edge',
 };
 
-// Models to try in order (fallback if one is overloaded)
-const MODELS_TO_TRY = [
-  'gemini-2.5-flash-lite-preview-09-2025',  // Latest fast model
-  'gemini-2.0-flash',                        // Fallback
-];
+// Single model - no fallback
+const MODEL = 'gemini-2.5-flash-lite-preview-09-2025';
 
 export default async function handler(req: Request) {
   // Handle CORS
@@ -97,45 +94,12 @@ IMPORTANT:
 - Think like a museum curator designing an educational exhibit`;
 
     const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: MODEL });
     
-    // Try models in order until one works
-    let lastError: Error | null = null;
-    let text = '';
-    let usedModel = '';
-    
-    for (const modelName of MODELS_TO_TRY) {
-      try {
-        console.log(`Trying model: ${modelName}`);
-        const model = genAI.getGenerativeModel({ model: modelName });
-        const result = await model.generateContent(prompt);
-        text = result.response.text();
-        usedModel = modelName;
-        console.log(`✅ Success with model: ${modelName}`);
-        break; // Success! Exit the loop
-      } catch (modelError) {
-        console.log(`❌ Model ${modelName} failed:`, modelError);
-        lastError = modelError instanceof Error ? modelError : new Error(String(modelError));
-        // Continue to next model
-      }
-    }
-    
-    // If all models failed, return error
-    if (!text) {
-      return new Response(
-        JSON.stringify({
-          error: 'All models failed',
-          details: lastError?.message || 'Unknown error',
-          triedModels: MODELS_TO_TRY,
-        }),
-        {
-          status: 503,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-          },
-        }
-      );
-    }
+    console.log(`🧠 Using model: ${MODEL}`);
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
+    console.log(`✅ Got response from ${MODEL}`);
 
     // Log raw response for debugging
     console.log('=== GEMINI RAW RESPONSE ===');
@@ -160,7 +124,7 @@ IMPORTANT:
       return new Response(
         JSON.stringify({
           error: 'Failed to parse Gemini response as JSON',
-          model: usedModel,
+          model: MODEL,
           rawResponse: text,
           cleanedResponse: cleaned,
           parseError: parseError instanceof Error ? parseError.message : 'Unknown parse error',
@@ -187,7 +151,7 @@ IMPORTANT:
     return new Response(JSON.stringify({
       ...composition,
       _debug: {
-        model: usedModel,
+        model: MODEL,
         rawResponseLength: text.length,
       }
     }), {
