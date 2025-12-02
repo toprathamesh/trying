@@ -45,6 +45,10 @@ export default async function handler(req: Request) {
     // Decode the URL (it might be double-encoded)
     try {
       modelUrl = decodeURIComponent(modelUrl);
+      // Sometimes it's double-encoded, try again
+      if (modelUrl.includes('%')) {
+        modelUrl = decodeURIComponent(modelUrl);
+      }
     } catch (e) {
       // Already decoded or invalid, use as-is
     }
@@ -60,7 +64,8 @@ export default async function handler(req: Request) {
     try {
       url = new URL(modelUrl);
     } catch (e) {
-      return new Response(JSON.stringify({ error: 'Invalid URL format' }), {
+      console.error('Invalid URL format:', modelUrl, e);
+      return new Response(JSON.stringify({ error: 'Invalid URL format', url: modelUrl }), {
         status: 400,
         headers: { 
           'Content-Type': 'application/json',
@@ -69,8 +74,19 @@ export default async function handler(req: Request) {
       });
     }
     
-    if (!allowedDomains.some(domain => url.hostname.includes(domain))) {
-      return new Response(JSON.stringify({ error: 'Domain not allowed' }), {
+    // Check if domain is allowed (more lenient check)
+    const hostname = url.hostname.toLowerCase();
+    const isAllowed = allowedDomains.some(domain => 
+      hostname === domain || hostname.endsWith('.' + domain)
+    );
+    
+    if (!isAllowed) {
+      console.error('Domain not allowed:', hostname, 'from URL:', modelUrl);
+      return new Response(JSON.stringify({ 
+        error: 'Domain not allowed',
+        hostname: hostname,
+        allowedDomains: allowedDomains
+      }), {
         status: 403,
         headers: { 
           'Content-Type': 'application/json',
