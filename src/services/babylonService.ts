@@ -110,35 +110,6 @@ export class BabylonSceneManager {
     this.setupHoverDetection();
   }
   
-  private addGridOverlay() {
-    // Create subtle grid lines
-    const gridSize = 100;
-    const gridStep = 5;
-    const gridColor = new BABYLON.Color3(0.15, 0.15, 0.2);
-    
-    for (let i = -gridSize/2; i <= gridSize/2; i += gridStep) {
-      // X lines
-      const xLine = BABYLON.MeshBuilder.CreateLines(`gridX${i}`, {
-        points: [
-          new BABYLON.Vector3(i, 0.01, -gridSize/2),
-          new BABYLON.Vector3(i, 0.01, gridSize/2)
-        ]
-      }, this.scene);
-      xLine.color = gridColor;
-      xLine.alpha = 0.3;
-      
-      // Z lines
-      const zLine = BABYLON.MeshBuilder.CreateLines(`gridZ${i}`, {
-        points: [
-          new BABYLON.Vector3(-gridSize/2, 0.01, i),
-          new BABYLON.Vector3(gridSize/2, 0.01, i)
-        ]
-      }, this.scene);
-      zLine.color = gridColor;
-      zLine.alpha = 0.3;
-    }
-  }
-  
   private setupHoverDetection() {
     this.scene.onPointerMove = (_evt, pickResult) => {
       // Remove previous highlight
