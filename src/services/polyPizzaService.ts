@@ -1,8 +1,10 @@
 /**
- * Model Service
+ * 3D Model Service
  * 
- * Uses Khronos glTF Sample Models (CC0 license) directly.
+ * Uses Khronos glTF-Sample-Assets (CC0 license) - 100+ free models!
  * No external API needed - all models are hosted on GitHub.
+ * 
+ * Source: https://github.com/KhronosGroup/glTF-Sample-Assets
  */
 
 export interface PolyPizzaModel {
@@ -21,177 +23,159 @@ export interface SearchResult {
   query: string;
 }
 
-// All available models from Khronos glTF samples
+// Base URL for the new Khronos Sample Assets repo
+const BASE_URL = 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models';
+
+// Helper to create model entry
+const model = (name: string, displayName?: string, category?: string): PolyPizzaModel => ({
+  id: name.toLowerCase(),
+  title: displayName || name,
+  author: 'Khronos Group',
+  downloadUrl: `${BASE_URL}/${name}/glTF-Binary/${name}.glb`,
+  thumbnail: '',
+  license: 'CC0',
+  category
+});
+
+// All available models from Khronos glTF-Sample-Assets
 const AVAILABLE_MODELS: Record<string, PolyPizzaModel> = {
-  'fox': {
-    id: 'fox',
-    title: 'Fox',
-    author: 'Khronos Group',
-    downloadUrl: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Fox/glTF-Binary/Fox.glb',
-    thumbnail: '',
-    license: 'CC0'
-  },
-  'duck': {
-    id: 'duck',
-    title: 'Duck',
-    author: 'Khronos Group',
-    downloadUrl: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Duck/glTF-Binary/Duck.glb',
-    thumbnail: '',
-    license: 'CC0'
-  },
-  'dragon': {
-    id: 'dragon',
-    title: 'Dragon',
-    author: 'Khronos Group',
-    downloadUrl: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DragonAttenuation/glTF-Binary/DragonAttenuation.glb',
-    thumbnail: '',
-    license: 'CC0'
-  },
-  'helmet': {
-    id: 'helmet',
-    title: 'Damaged Helmet',
-    author: 'Khronos Group',
-    downloadUrl: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb',
-    thumbnail: '',
-    license: 'CC0'
-  },
-  'lantern': {
-    id: 'lantern',
-    title: 'Lantern',
-    author: 'Khronos Group',
-    downloadUrl: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Lantern/glTF-Binary/Lantern.glb',
-    thumbnail: '',
-    license: 'CC0'
-  },
-  'avocado': {
-    id: 'avocado',
-    title: 'Avocado',
-    author: 'Khronos Group',
-    downloadUrl: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Avocado/glTF-Binary/Avocado.glb',
-    thumbnail: '',
-    license: 'CC0'
-  },
-  'car': {
-    id: 'car',
-    title: 'Toy Car',
-    author: 'Khronos Group',
-    downloadUrl: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/ToyCar/glTF-Binary/ToyCar.glb',
-    thumbnail: '',
-    license: 'CC0'
-  },
-  'chair': {
-    id: 'chair',
-    title: 'Sheen Chair',
-    author: 'Khronos Group',
-    downloadUrl: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/SheenChair/glTF-Binary/SheenChair.glb',
-    thumbnail: '',
-    license: 'CC0'
-  },
-  'bottle': {
-    id: 'bottle',
-    title: 'Water Bottle',
-    author: 'Khronos Group',
-    downloadUrl: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/WaterBottle/glTF-Binary/WaterBottle.glb',
-    thumbnail: '',
-    license: 'CC0'
-  },
-  'brain': {
-    id: 'brain',
-    title: 'Brain Stem',
-    author: 'Khronos Group',
-    downloadUrl: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/BrainStem/glTF-Binary/BrainStem.glb',
-    thumbnail: '',
-    license: 'CC0'
-  },
-  'boombox': {
-    id: 'boombox',
-    title: 'Boom Box',
-    author: 'Khronos Group',
-    downloadUrl: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/BoomBox/glTF-Binary/BoomBox.glb',
-    thumbnail: '',
-    license: 'CC0'
-  },
-  'monkey': {
-    id: 'monkey',
-    title: 'Suzanne (Monkey)',
-    author: 'Khronos Group',
-    downloadUrl: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Suzanne/glTF-Binary/Suzanne.glb',
-    thumbnail: '',
-    license: 'CC0'
-  },
-  'sponza': {
-    id: 'sponza',
-    title: 'Sponza Palace',
-    author: 'Khronos Group',
-    downloadUrl: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Sponza/glTF-Binary/Sponza.glb',
-    thumbnail: '',
-    license: 'CC0'
-  },
-  'flight_helmet': {
-    id: 'flight_helmet',
-    title: 'Flight Helmet',
-    author: 'Khronos Group',
-    downloadUrl: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/FlightHelmet/glTF-Binary/FlightHelmet.glb',
-    thumbnail: '',
-    license: 'CC0'
-  },
-  'corset': {
-    id: 'corset',
-    title: 'Corset',
-    author: 'Khronos Group',
-    downloadUrl: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Corset/glTF-Binary/Corset.glb',
-    thumbnail: '',
-    license: 'CC0'
-  },
-  'cloth': {
-    id: 'cloth',
-    title: 'Sheen Cloth',
-    author: 'Khronos Group',
-    downloadUrl: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/SheenCloth/glTF-Binary/SheenCloth.glb',
-    thumbnail: '',
-    license: 'CC0'
-  }
+  // Animals
+  'fox': model('Fox', 'Fox', 'animal'),
+  'duck': model('Duck', 'Duck', 'animal'),
+  'fish': model('BarramundiFish', 'Barramundi Fish', 'animal'),
+  'mosquito': model('MosquitoInAmber', 'Mosquito in Amber', 'animal'),
+  
+  // People/Characters
+  'man': model('CesiumMan', 'Walking Man', 'character'),
+  'person': model('CesiumMan', 'Walking Man', 'character'),
+  'human': model('CesiumMan', 'Walking Man', 'character'),
+  'figure': model('RiggedFigure', 'Human Figure', 'character'),
+  
+  // Vehicles
+  'car': model('ToyCar', 'Toy Car', 'vehicle'),
+  'truck': model('CesiumMilkTruck', 'Milk Truck', 'vehicle'),
+  
+  // Furniture
+  'chair': model('SheenChair', 'Sheen Chair', 'furniture'),
+  'sofa': model('GlamVelvetSofa', 'Velvet Sofa', 'furniture'),
+  'couch': model('GlamVelvetSofa', 'Velvet Sofa', 'furniture'),
+  'ottoman': model('SpecularSilkPouf', 'Silk Pouf', 'furniture'),
+  'pouf': model('SpecularSilkPouf', 'Silk Pouf', 'furniture'),
+  
+  // Nature/Plants
+  'plant': model('DiffuseTransmissionPlant', 'Plant', 'nature'),
+  'flower': model('GlassVaseFlowers', 'Flowers in Vase', 'nature'),
+  'flowers': model('GlassVaseFlowers', 'Flowers in Vase', 'nature'),
+  'vase': model('GlassVaseFlowers', 'Flowers in Vase', 'nature'),
+  
+  // Food
+  'avocado': model('Avocado', 'Avocado', 'food'),
+  'orange': model('MandarinOrange', 'Mandarin Orange', 'food'),
+  'fruit': model('MandarinOrange', 'Mandarin Orange', 'food'),
+  'olives': model('IridescentDishWithOlives', 'Dish with Olives', 'food'),
+  
+  // Objects
+  'lantern': model('Lantern', 'Lantern', 'object'),
+  'lamp': model('StainedGlassLamp', 'Stained Glass Lamp', 'object'),
+  'light': model('Lantern', 'Lantern', 'object'),
+  'bottle': model('WaterBottle', 'Water Bottle', 'object'),
+  'camera': model('AntiqueCamera', 'Antique Camera', 'object'),
+  'watch': model('ChronographWatch', 'Chronograph Watch', 'object'),
+  'clock': model('ChronographWatch', 'Chronograph Watch', 'object'),
+  'shoe': model('MaterialsVariantsShoe', 'Shoe', 'object'),
+  'sunglasses': model('SunglassesKhronos', 'Sunglasses', 'object'),
+  'glasses': model('SunglassesKhronos', 'Sunglasses', 'object'),
+  'boombox': model('BoomBox', 'Boom Box', 'object'),
+  'radio': model('BoomBox', 'Boom Box', 'object'),
+  'speaker': model('BoomBox', 'Boom Box', 'object'),
+  'music': model('BoomBox', 'Boom Box', 'object'),
+  'candle': model('GlassHurricaneCandleHolder', 'Candle Holder', 'object'),
+  'window': model('GlassBrokenWindow', 'Broken Window', 'object'),
+  'pot': model('PotOfCoals', 'Pot of Coals', 'object'),
+  'fire': model('PotOfCoals', 'Pot of Coals', 'object'),
+  
+  // Armor/Helmets
+  'helmet': model('DamagedHelmet', 'Damaged Helmet', 'armor'),
+  'flight_helmet': model('FlightHelmet', 'Flight Helmet', 'armor'),
+  'pilot': model('FlightHelmet', 'Flight Helmet', 'armor'),
+  'scifi_helmet': model('SciFiHelmet', 'Sci-Fi Helmet', 'armor'),
+  'armor': model('DamagedHelmet', 'Damaged Helmet', 'armor'),
+  
+  // Fantasy/Creatures
+  'dragon': model('DragonAttenuation', 'Dragon', 'fantasy'),
+  
+  // Science/Anatomy
+  'brain': model('BrainStem', 'Brain Stem', 'science'),
+  'skull': model('ScatteringSkull', 'Skull', 'science'),
+  'anatomy': model('BrainStem', 'Brain Stem', 'science'),
+  
+  // Architecture
+  'sponza': model('Sponza', 'Sponza Palace', 'architecture'),
+  'palace': model('Sponza', 'Sponza Palace', 'architecture'),
+  'building': model('Sponza', 'Sponza Palace', 'architecture'),
+  
+  // Other
+  'monkey': model('Suzanne', 'Suzanne (Monkey)', 'character'),
+  'suzanne': model('Suzanne', 'Suzanne (Monkey)', 'character'),
+  'corset': model('Corset', 'Corset', 'fashion'),
+  'cloth': model('SheenCloth', 'Sheen Cloth', 'material'),
+  'fabric': model('SheenCloth', 'Sheen Cloth', 'material'),
+  'refrigerator': model('CommercialRefrigerator', 'Refrigerator', 'appliance'),
+  'fridge': model('CommercialRefrigerator', 'Refrigerator', 'appliance'),
 };
 
-// Aliases for common search terms
-const ALIASES: Record<string, string> = {
+// Common word mappings
+const WORD_MAPPINGS: Record<string, string> = {
   'dog': 'fox',
   'cat': 'fox',
+  'wolf': 'fox',
   'animal': 'fox',
   'pet': 'fox',
   'bird': 'duck',
-  'light': 'lantern',
-  'lamp': 'lantern',
-  'food': 'avocado',
-  'fruit': 'avocado',
-  'vehicle': 'car',
-  'automobile': 'car',
-  'seat': 'chair',
-  'furniture': 'chair',
+  'chicken': 'duck',
   'water': 'bottle',
   'drink': 'bottle',
-  'music': 'boombox',
-  'radio': 'boombox',
-  'speaker': 'boombox',
-  'armor': 'helmet',
+  'seat': 'chair',
+  'furniture': 'chair',
+  'vehicle': 'car',
+  'automobile': 'car',
+  'tree': 'plant',
+  'nature': 'plant',
+  'food': 'avocado',
   'warrior': 'helmet',
   'knight': 'helmet',
-  'anatomy': 'brain',
+  'soldier': 'helmet',
+  'battle': 'helmet',
+  'medieval': 'helmet',
   'science': 'brain',
   'organ': 'brain',
-  'fantasy': 'dragon',
-  'creature': 'dragon',
+  'head': 'skull',
+  'bone': 'skull',
+  'skeleton': 'skull',
   'monster': 'dragon',
+  'creature': 'dragon',
+  'fantasy': 'dragon',
+  'dinosaur': 'dragon',
   'ape': 'monkey',
   'primate': 'monkey',
-  'palace': 'sponza',
-  'building': 'sponza',
+  'gorilla': 'monkey',
+  'room': 'sponza',
   'architecture': 'sponza',
-  'pilot': 'flight_helmet',
+  'interior': 'sponza',
+  'time': 'watch',
+  'wristwatch': 'watch',
+  'photo': 'camera',
+  'photography': 'camera',
+  'appliance': 'refrigerator',
+  'kitchen': 'refrigerator',
+  'insect': 'mosquito',
+  'bug': 'mosquito',
+  'aviation': 'flight_helmet',
   'aviator': 'flight_helmet',
-  'fashion': 'corset',
-  'fabric': 'cloth',
-  'textile': 'cloth',
+  'pilot_helmet': 'flight_helmet',
+  'futuristic': 'scifi_helmet',
+  'scifi': 'scifi_helmet',
+  'space': 'scifi_helmet',
 };
 
 export class PolyPizzaService {
@@ -199,10 +183,11 @@ export class PolyPizzaService {
    * Search for 3D models - uses local library only (no API calls)
    */
   async search(query: string, _limit: number = 5): Promise<SearchResult> {
-    const normalizedQuery = query.toLowerCase().trim();
+    const normalizedQuery = query.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
     
     // Direct match
     if (AVAILABLE_MODELS[normalizedQuery]) {
+      console.log(`✅ Direct match: ${normalizedQuery}`);
       return {
         models: [AVAILABLE_MODELS[normalizedQuery]],
         total: 1,
@@ -210,11 +195,12 @@ export class PolyPizzaService {
       };
     }
     
-    // Check aliases
-    const aliasKey = ALIASES[normalizedQuery];
-    if (aliasKey && AVAILABLE_MODELS[aliasKey]) {
+    // Check word mappings
+    if (WORD_MAPPINGS[normalizedQuery] && AVAILABLE_MODELS[WORD_MAPPINGS[normalizedQuery]]) {
+      const mappedKey = WORD_MAPPINGS[normalizedQuery];
+      console.log(`✅ Mapped: ${normalizedQuery} → ${mappedKey}`);
       return {
-        models: [AVAILABLE_MODELS[aliasKey]],
+        models: [AVAILABLE_MODELS[mappedKey]],
         total: 1,
         query: normalizedQuery
       };
@@ -223,6 +209,7 @@ export class PolyPizzaService {
     // Partial match in model names
     for (const key in AVAILABLE_MODELS) {
       if (key.includes(normalizedQuery) || normalizedQuery.includes(key)) {
+        console.log(`✅ Partial match: ${normalizedQuery} ≈ ${key}`);
         return {
           models: [AVAILABLE_MODELS[key]],
           total: 1,
@@ -231,13 +218,14 @@ export class PolyPizzaService {
       }
     }
     
-    // Partial match in aliases
-    for (const alias in ALIASES) {
-      if (alias.includes(normalizedQuery) || normalizedQuery.includes(alias)) {
-        const modelKey = ALIASES[alias];
-        if (AVAILABLE_MODELS[modelKey]) {
+    // Partial match in word mappings
+    for (const word in WORD_MAPPINGS) {
+      if (word.includes(normalizedQuery) || normalizedQuery.includes(word)) {
+        const mappedKey = WORD_MAPPINGS[word];
+        if (AVAILABLE_MODELS[mappedKey]) {
+          console.log(`✅ Partial mapping: ${normalizedQuery} ≈ ${word} → ${mappedKey}`);
           return {
-            models: [AVAILABLE_MODELS[modelKey]],
+            models: [AVAILABLE_MODELS[mappedKey]],
             total: 1,
             query: normalizedQuery
           };
@@ -246,7 +234,7 @@ export class PolyPizzaService {
     }
     
     // No match - return fox as default (it's a nice model)
-    console.warn(`No model found for "${query}", using fox as default`);
+    console.warn(`⚠️ No model found for "${query}", using fox as default`);
     return {
       models: [AVAILABLE_MODELS['fox']],
       total: 1,
@@ -259,7 +247,14 @@ export class PolyPizzaService {
   }
 
   getAllFallbackModels(): PolyPizzaModel[] {
-    return Object.values(AVAILABLE_MODELS);
+    // Return unique models (some are aliased)
+    const unique = new Map<string, PolyPizzaModel>();
+    for (const model of Object.values(AVAILABLE_MODELS)) {
+      if (!unique.has(model.downloadUrl)) {
+        unique.set(model.downloadUrl, model);
+      }
+    }
+    return Array.from(unique.values());
   }
   
   // Get list of available model names (for Gemini prompt)

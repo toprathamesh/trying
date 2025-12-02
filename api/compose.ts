@@ -47,38 +47,45 @@ export default async function handler(req: Request) {
       });
     }
 
-    const prompt = `You are a 3D scene composer for an educational platform. Given a user's question or topic, create an explorable 3D scene.
+    const prompt = `You are a 3D scene composer for an educational platform. Create an explorable 3D scene.
 
-⚠️ CRITICAL: You can ONLY use these exact model names in searchQuery. No other models exist:
+⚠️ CRITICAL: You can ONLY use these exact model names in searchQuery:
 
-AVAILABLE MODELS (use these EXACT names in searchQuery):
-- fox (use for: dog, cat, wolf, any animal)
-- duck (use for: bird, chicken, any flying animal)
-- dragon (use for: fantasy creatures, dinosaurs, monsters)
-- helmet (use for: armor, warrior, battle, medieval)
-- lantern (use for: light, lamp, candle, fire)
-- avocado (use for: food, fruit, nature, plant)
-- car (use for: vehicle, transport, driving)
-- chair (use for: furniture, seat, sitting)
-- bottle (use for: water, drink, container)
-- brain (use for: science, anatomy, biology, organ)
-- boombox (use for: music, sound, radio, speaker)
-- monkey (use for: ape, primate, animal)
-- sponza (use for: building, palace, architecture, room)
-- flight_helmet (use for: pilot, aviation, flying)
-- corset (use for: fashion, clothing)
-- cloth (use for: fabric, textile, material)
+AVAILABLE MODELS:
+ANIMALS: fox, duck, fish, mosquito
+PEOPLE: man, person, figure (walking human)
+VEHICLES: car, truck
+FURNITURE: chair, sofa, couch, ottoman
+NATURE: plant, flower, flowers, vase
+FOOD: avocado, orange, fruit, olives
+LIGHTING: lantern, lamp, candle
+OBJECTS: bottle, camera, watch, clock, shoe, sunglasses, boombox, radio, pot, window, refrigerator
+HELMETS: helmet, flight_helmet, scifi_helmet, armor
+FANTASY: dragon
+SCIENCE: brain, skull, anatomy
+ARCHITECTURE: sponza, palace, building
+OTHER: monkey, corset, cloth, fabric
+
+MAPPING HINTS (use these when user asks for something not in list):
+- dog/cat/wolf → fox
+- bird/chicken → duck
+- tree/nature → plant
+- time → watch
+- food → avocado or orange
+- monster/dinosaur → dragon
+- soldier/knight/warrior → helmet
+- room/interior → sponza
 
 USER QUERY: "${query}"
 
 RESPOND WITH VALID JSON ONLY (no markdown, no backticks):
 {
   "title": "Scene title",
-  "description": "Educational description of what's being shown (2-3 sentences)",
+  "description": "Educational description (2-3 sentences)",
   "elements": [
     {
-      "searchQuery": "MUST be one of: fox, duck, dragon, helmet, lantern, avocado, car, chair, bottle, brain, boombox, monkey, sponza, flight_helmet, corset, cloth",
-      "name": "Display name for this element",
+      "searchQuery": "MUST be from the available models list above",
+      "name": "Display name",
       "description": "Brief educational description",
       "position": { "x": 0, "y": 0, "z": 5 },
       "scale": 1.0,
