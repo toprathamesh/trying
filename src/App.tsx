@@ -233,7 +233,8 @@ function App() {
       height: '100vh', 
       overflow: 'hidden', 
       position: 'relative', 
-      backgroundColor: '#000',
+      // Match Babylon sky color as a fallback while canvas initializes
+      backgroundColor: '#87CEFA',
       fontFamily: "'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
     }}>
       {/* 3D Scene */}
@@ -279,7 +280,7 @@ function App() {
         <h1 style={{ 
           color: 'white', 
           margin: 0, 
-          fontSize: '1.4rem', 
+          fontSize: '1.9rem', 
           letterSpacing: 3, 
           fontWeight: 300,
           textShadow: '0 2px 20px rgba(0,0,0,0.5)'

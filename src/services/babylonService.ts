@@ -80,8 +80,8 @@ export class BabylonSceneManager {
     
     // Create ground material - natural grass green color
     const groundMaterial = new BABYLON.StandardMaterial("groundMat", this.scene);
-    // Natural grass green: RGB(76, 175, 80) = #4CAF50
-    groundMaterial.diffuseColor = new BABYLON.Color3(0.298, 0.686, 0.314); // Natural grass green
+    // Slightly darker natural grass green: RGB(46, 125, 50) = #2E7D32
+    groundMaterial.diffuseColor = new BABYLON.Color3(0.18, 0.49, 0.2); // Darker grass green
     groundMaterial.specularColor = new BABYLON.Color3(0.05, 0.15, 0.08); // Low specular for matte grass
     groundMaterial.emissiveColor = new BABYLON.Color3(0.02, 0.05, 0.02); // Very subtle green tint
     ground.material = groundMaterial;
@@ -345,27 +345,27 @@ export class BabylonSceneManager {
       case 'bright':
         hemiLight.intensity = 1.2;
         dirLight.intensity = 0.8;
-        this.scene.clearColor = new BABYLON.Color4(0.1, 0.1, 0.15, 1);
-        this.scene.fogDensity = 0.005;
+        // Keep sky/grass colors, just make scene slightly clearer
+        this.scene.fogDensity = 0.004;
         break;
       case 'dim':
         hemiLight.intensity = 0.4;
         dirLight.intensity = 0.3;
-        this.scene.clearColor = new BABYLON.Color4(0.01, 0.01, 0.02, 1);
-        this.scene.fogDensity = 0.02;
+        // Slightly increase fog for mood without changing background color
+        this.scene.fogDensity = 0.012;
         break;
       case 'dramatic':
         hemiLight.intensity = 0.3;
         dirLight.intensity = 1.0;
-        this.scene.clearColor = new BABYLON.Color4(0.0, 0.0, 0.02, 1);
-        this.scene.fogDensity = 0.015;
+        // A bit more fog for drama, keep colors the same
+        this.scene.fogDensity = 0.01;
         break;
       case 'natural':
       default:
         hemiLight.intensity = 0.7;
         dirLight.intensity = 0.5;
-        this.scene.clearColor = new BABYLON.Color4(0.02, 0.02, 0.05, 1);
-        this.scene.fogDensity = 0.01;
+        // Default outdoor feel
+        this.scene.fogDensity = 0.005;
         break;
     }
   }
