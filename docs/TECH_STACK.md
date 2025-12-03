@@ -6,12 +6,15 @@ Everything used and why.
 
 ## Overview
 
+**OBVIAN is an AI‑native explorable world engine for learning and search.**  
+You ask a question (by text or voice), and the system composes an **interactive 3D scene + narration**, running on the web today and designed to extend to **WebXR/AR headsets and, eventually, glasses**.
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  Frontend          │  Backend           │  External         │
 ├────────────────────┼────────────────────┼───────────────────┤
 │  React 19          │  Vercel Serverless │  Google Gemini    │
-│  TypeScript 5.9    │  Edge Runtime      │  Khronos glTF     │
+│  TypeScript 5.9    │  Edge Runtime      │  Poly Pizza 3D    │
 │  Vite 7.2          │                    │                   │
 │  Babylon.js 8.38   │                    │                   │
 └─────────────────────────────────────────────────────────────┘
@@ -138,7 +141,7 @@ export const config = {
 
 ## External Services
 
-### Google Gemini 2.5 Flash-Lite
+### Google Gemini 2.5 Flash-Lite (Preview)
 **What:** Google's fastest multimodal AI model  
 **Why:**
 - Ultra-fast responses (~100-300ms for simple tasks)
@@ -148,12 +151,10 @@ export const config = {
 - Free tier available
 - Perfect for high-throughput educational apps
 
-**Models Used:**
-| Tier | Model | Use Case |
-|------|-------|----------|
-| Fast | `gemini-2.5-flash-lite` | Annotations, simple queries |
-| Balanced | `gemini-2.5-flash-lite` | Scene composition with image validation |
-| Complex | `gemini-2.5-flash` | Deep reasoning, complex layouts |
+**Model Used:**
+
+- `gemini-2.5-flash-lite-preview-09-2025` – used for **everything** (scene composition, annotation, and visual validation).  
+  There are **no model fallbacks**: if Gemini fails, the app surfaces the real error and raw JSON for debugging.
 
 **Capabilities:**
 - ✅ Text, Image, Video, Audio, PDF input
@@ -163,9 +164,9 @@ export const config = {
 - ✅ Function calling
 
 **Used for:**
-1. **Scene Composition** - Understanding queries and creating multi-object layouts
-2. **Object Annotation** - Generating educational explanations
-3. **Visual Validation** - Analyzing model thumbnails to understand spatial arrangement
+1. **Scene Composition** – Understanding queries and creating multi‑object layouts as JSON.
+2. **Object Annotation** – Generating educational explanations and related topics.
+3. **Visual Validation (planned)** – Analyzing rendered scene images and thumbnails to refine spatial arrangement and scaling.
 
 **SDK:**
 ```json
@@ -174,22 +175,18 @@ export const config = {
 
 ---
 
-### Khronos glTF Sample Models
-**What:** Official glTF test models  
+### Poly Pizza 3D Library
+**What:** Large public library of CC0 low‑poly 3D models  
 **Why:**
 - CC0 license (free, no attribution)
-- High quality
-- Reliable CDN (GitHub raw)
-- Standard format (GLB)
-
-**URL Pattern:**
-```
-https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/{ModelName}/glTF-Binary/{ModelName}.glb
-```
+- 10k+ models across many everyday categories (animals, food, vehicles, buildings, etc.)
+- GLB format that Babylon.js can load directly
+- Great for educational, stylized, and browser‑friendly scenes
 
 **Used for:**
-- All 3D models in the current version
-- Fallback when search fails
+- All 3D models in the current version (no other model library is used)
+- Search is proxied via `/api/search-models` to avoid CORS and hide the Poly Pizza API key
+- GLB downloads are proxied via `/api/proxy-model` for CORS‑safe loading and caching
 
 ---
 
@@ -209,19 +206,19 @@ https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/{Mo
 **Purpose:** API client for Gemini endpoints  
 **Dependencies:** Fetch API  
 **Responsibilities:**
-- Call `/api/compose` for scene composition
+- Call `/api/compose` for scene composition (Gemini 2.5 Flash‑Lite)
 - Call `/api/annotate` for object explanations
-- Handle errors with fallbacks
+- Surface raw errors and Gemini JSON back to the UI (no static fallbacks)
 
 ---
 
 ### `/src/services/polyPizzaService.ts`
-**Purpose:** 3D model search  
-**Dependencies:** None (pure TypeScript)  
+**Purpose:** 3D model search via backend proxy  
+**Dependencies:** Browser Fetch API  
 **Responsibilities:**
-- Map search terms to model URLs
-- Keyword synonyms (dog → fox)
-- Fallback model (box)
+- Call `/api/search-models` for Poly Pizza search
+- Normalize search terms and results into a consistent `PolyPizzaModel` shape
+- Convert Poly Pizza download URLs into `/api/proxy-model` URLs for CORS‑safe loading
 
 ---
 
@@ -229,10 +226,10 @@ https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/{Mo
 **Purpose:** Orchestrate scene creation  
 **Dependencies:** GeminiService, PolyPizzaService  
 **Responsibilities:**
-- Take user query
-- Get composition from Gemini
-- Find models for each element
-- Return ready-to-load scene
+- Take user query (text or voice transcript)
+- Get composition JSON from Gemini
+- Resolve models for each element via Poly Pizza
+- Return a ready‑to‑load scene, streaming progress as elements are found/loaded
 
 ---
 
