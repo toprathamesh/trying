@@ -111,7 +111,7 @@ export class BabylonSceneManager {
   }
   
   private setupHoverDetection() {
-    this.scene.onPointerMove = (_evt, pickResult) => {
+    this.scene.onPointerMove = (_evt: BABYLON.PointerInfo, pickResult: BABYLON.PickingInfo) => {
       // Remove previous highlight
       if (this.currentlyHovered && this.highlightLayer) {
         this.highlightLayer.removeMesh(this.currentlyHovered as BABYLON.Mesh);
@@ -165,7 +165,7 @@ export class BabylonSceneManager {
       this.normalizeModel(result.meshes);
       
       // Add collision to all meshes
-      result.meshes.forEach(mesh => {
+      result.meshes.forEach((mesh: BABYLON.AbstractMesh) => {
         mesh.checkCollisions = true;
         mesh.metadata = { elementId: id };
       });
@@ -230,7 +230,7 @@ export class BabylonSceneManager {
         }
         
         // Add collision and metadata
-        result.meshes.forEach(mesh => {
+        result.meshes.forEach((mesh: BABYLON.AbstractMesh) => {
           mesh.checkCollisions = true;
           mesh.metadata = { 
             elementId,
@@ -263,13 +263,13 @@ export class BabylonSceneManager {
     if (meshes.length === 0) return;
 
     // Force bounds computation
-    meshes.forEach(mesh => mesh.computeWorldMatrix(true));
+    meshes.forEach((mesh: BABYLON.AbstractMesh) => mesh.computeWorldMatrix(true));
     
     // Calculate combined bounding box
     let min = new BABYLON.Vector3(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE);
     let max = new BABYLON.Vector3(-Number.MAX_VALUE, -Number.MAX_VALUE, -Number.MAX_VALUE);
 
-    meshes.forEach(mesh => {
+    meshes.forEach((mesh: BABYLON.AbstractMesh) => {
       if (mesh.getTotalVertices() > 0) {
         const boundingInfo = mesh.getBoundingInfo();
         const boundingBox = boundingInfo.boundingBox;
@@ -294,11 +294,11 @@ export class BabylonSceneManager {
     if (meshes.length === 0) return;
     
     // Force recompute after scaling
-    meshes.forEach(mesh => mesh.computeWorldMatrix(true));
+    meshes.forEach((mesh: BABYLON.AbstractMesh) => mesh.computeWorldMatrix(true));
     
     // Find the lowest point
     let minY = Number.MAX_VALUE;
-    meshes.forEach(mesh => {
+    meshes.forEach((mesh: BABYLON.AbstractMesh) => {
       if (mesh.getTotalVertices() > 0) {
         const boundingInfo = mesh.getBoundingInfo();
         minY = Math.min(minY, boundingInfo.boundingBox.minimumWorld.y);
@@ -321,8 +321,15 @@ export class BabylonSceneManager {
       !m.name.startsWith('grid') &&
       m.name !== "skybox"
     );
-    meshesToDispose.forEach(m => m.dispose());
+    meshesToDispose.forEach((m: BABYLON.AbstractMesh) => m.dispose());
     this.loadedModels.clear();
+  }
+
+  /**
+   * Capture a screenshot of the current scene and return a data URL (base64 PNG).
+   */
+  async captureScreenshot(width: number = 800, height: number = 450): Promise<string> {
+    return BABYLON.Tools.CreateScreenshotAsync(this.engine, this.camera, { width, height });
   }
   
   /**

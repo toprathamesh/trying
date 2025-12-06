@@ -16,6 +16,7 @@ export interface BabylonViewerHandle {
   setCameraPosition: (pos: { x: number; y: number; z: number }) => void;
   setAmbiance: (ambiance: 'bright' | 'dim' | 'dramatic' | 'natural') => void;
   clearScene: () => void;
+  captureScreenshot: (width?: number, height?: number) => Promise<string | null>;
 }
 
 export const BabylonViewer = forwardRef<BabylonViewerHandle, BabylonViewerProps>(
@@ -53,6 +54,10 @@ export const BabylonViewer = forwardRef<BabylonViewerHandle, BabylonViewerProps>
         if (sceneManager) {
           sceneManager.clearAllModels();
         }
+      },
+      captureScreenshot: async (width?: number, height?: number) => {
+        if (!sceneManager) return null;
+        return sceneManager.captureScreenshot(width, height);
       }
     }), [sceneManager]);
 

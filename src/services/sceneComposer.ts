@@ -1,7 +1,8 @@
 import { GeminiService } from './geminiService';
-import type { SceneComposition, SceneElement, ObjectAnnotation } from './geminiService';
+import type { SceneComposition, SceneElement, ObjectAnnotation, SceneValidationResult, SceneValidationSuggestion } from './geminiService';
 import { PolyPizzaService } from './polyPizzaService';
 import type { PolyPizzaModel } from './polyPizzaService';
+import { ModelResolver } from './modelResolver';
 
 export interface LoadedSceneElement extends SceneElement {
   model: PolyPizzaModel;
@@ -30,12 +31,14 @@ export type SceneUpdateCallback = (scene: ComposedScene) => void;
 export class SceneComposer {
   private gemini: GeminiService;
   private polyPizza: PolyPizzaService;
+  private modelResolver: ModelResolver;
   private currentScene: ComposedScene | null = null;
 
   constructor() {
     // No API key needed - backend handles it
     this.gemini = new GeminiService();
     this.polyPizza = new PolyPizzaService();
+    this.modelResolver = new ModelResolver();
   }
 
   /**
@@ -80,21 +83,22 @@ export class SceneComposer {
         const element = composition.elements[i];
         console.log(`🔍 Searching for model: ${element.searchQuery}`);
         
-        const searchResult = await this.polyPizza.search(element.searchQuery, 1);
-        
-        if (searchResult.models.length > 0) {
-          const model = searchResult.models[0];
-          console.log(`✅ Found model: ${model.title} (${model.downloadUrl})`);
-          
+        // Ask Poly Pizza for multiple candidates, then let the resolver pick the best
+        const searchResult = await this.polyPizza.search(element.searchQuery, 8);
+        const chosen = this.modelResolver.chooseBestModel(element, searchResult);
+
+        if (chosen) {
+          console.log(`✅ Using model: ${chosen.title} (${chosen.downloadUrl})`);
+
           loadedElements.push({
             ...element,
-            model,
+            model: chosen,
             meshIds: [],
-            loaded: false
+            loaded: false,
           });
         } else {
-          // No fallback - just skip this element and log the error
-          console.warn(`❌ Skipping element "${element.name}": ${searchResult.error || 'No model found for: ' + element.searchQuery}`);
+          const reason = searchResult.error || 'No suitable model found';
+          console.warn(`❌ Skipping element "${element.name}": ${reason}`);
         }
         
         // Update progress
@@ -152,21 +156,28 @@ export class SceneComposer {
    * Quick compose - skip AI, just search directly
    */
   async quickCompose(searchTerm: string): Promise<ComposedScene> {
-    const searchResult = await this.polyPizza.search(searchTerm, 1);
+    const pseudoElement: SceneElement = {
+      searchQuery: searchTerm,
+      name: searchTerm,
+      description: '',
+      position: { x: 0, y: 0, z: 5 },
+      scale: 1.0,
+    };
+
+    const searchResult = await this.polyPizza.search(searchTerm, 8);
+    const chosen = this.modelResolver.chooseBestModel(pseudoElement, searchResult);
     
-    if (searchResult.models.length === 0) {
+    if (!chosen) {
       throw new Error(`No models found for: ${searchTerm}`);
     }
-    
-    const model = searchResult.models[0];
-    
+        
     return {
       composition: {
-        title: model.title,
-        description: `Exploring: ${model.title}`,
+        title: chosen.title,
+        description: `Exploring: ${chosen.title}`,
         elements: [{
           searchQuery: searchTerm,
-          name: model.title,
+          name: chosen.title,
           description: '',
           position: { x: 0, y: 0, z: 5 },
           scale: 1.0
@@ -176,11 +187,11 @@ export class SceneComposer {
       },
       elements: [{
         searchQuery: searchTerm,
-        name: model.title,
+        name: chosen.title,
         description: '',
         position: { x: 0, y: 0, z: 5 },
         scale: 1.0,
-        model,
+        model: chosen,
         meshIds: [],
         loaded: false
       }],
@@ -194,6 +205,69 @@ export class SceneComposer {
    */
   getCurrentScene(): ComposedScene | null {
     return this.currentScene;
+  }
+
+  /**
+   * Validate the current layout and apply suggested refinements (position/scale).
+   */
+  async validateSceneLayout(
+    sceneGoal: string,
+    elements: LoadedSceneElement[],
+    sceneImageBase64?: string | null
+  ): Promise<{ validation: SceneValidationResult; adjustedElements: LoadedSceneElement[] }> {
+    const validation = await this.gemini.validateScene({
+      elements: elements.map(el => ({
+        name: el.name,
+        position: el.position,
+        scale: el.scale,
+        thumbnailUrl: el.model.thumbnail,
+      })),
+      sceneGoal,
+      sceneImageBase64: sceneImageBase64 || undefined,
+    });
+
+    const adjustedElements = this.applySuggestions(elements, validation.suggestions);
+
+    if (this.currentScene) {
+      this.currentScene = {
+        ...this.currentScene,
+        elements: adjustedElements,
+      };
+    }
+
+    return { validation, adjustedElements };
+  }
+
+  private applySuggestions(
+    elements: LoadedSceneElement[],
+    suggestions: SceneValidationSuggestion[]
+  ): LoadedSceneElement[] {
+    if (!suggestions || suggestions.length === 0) return elements;
+
+    const updated = elements.map((el) => ({
+      ...el,
+      position: { ...el.position },
+      scale: el.scale,
+    }));
+
+    for (const suggestion of suggestions) {
+      const idx = suggestion.elementIndex;
+      if (idx < 0 || idx >= updated.length) continue;
+
+      if (suggestion.suggestedPosition) {
+        updated[idx].position = {
+          x: suggestion.suggestedPosition.x ?? updated[idx].position.x,
+          y: suggestion.suggestedPosition.y ?? updated[idx].position.y,
+          z: suggestion.suggestedPosition.z ?? updated[idx].position.z,
+        };
+      }
+
+      if (suggestion.suggestedScale && suggestion.suggestedScale > 0) {
+        updated[idx].scale = suggestion.suggestedScale;
+      }
+    }
+
+    return updated;
   }
 
 }

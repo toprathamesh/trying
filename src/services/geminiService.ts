@@ -15,6 +15,20 @@ export interface SceneComposition {
   ambiance: 'bright' | 'dim' | 'dramatic' | 'natural';
 }
 
+export interface SceneValidationSuggestion {
+  elementIndex: number;
+  issue?: string;
+  suggestedPosition?: { x: number; y: number; z: number };
+  suggestedScale?: number;
+}
+
+export interface SceneValidationResult {
+  isValid: boolean;
+  layoutScore: number;
+  suggestions: SceneValidationSuggestion[];
+  overallFeedback: string;
+}
+
 export interface ObjectAnnotation {
   title: string;
   explanation: string;
@@ -117,5 +131,43 @@ export class GeminiService {
     }
 
     return ['solar system', 'rainforest ecosystem', 'human anatomy', 'medieval castle'];
+  }
+
+  /**
+   * Validate a composed scene layout using the backend visual validator.
+   */
+  async validateScene(payload: {
+    elements: Array<{
+      name: string;
+      position: { x: number; y: number; z: number };
+      scale: number;
+      thumbnailUrl?: string;
+    }>;
+    sceneGoal: string;
+    sceneImageBase64?: string | null;
+  }): Promise<SceneValidationResult> {
+    const response = await fetch(`${this.baseUrl}/api/validate-scene`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...payload,
+        // Also send as sceneImage for compatibility with the API
+        sceneImage: payload.sceneImageBase64,
+      }),
+    });
+
+    const data = await response.json();
+
+    console.log('=== VALIDATE SCENE RESPONSE ===');
+    console.log(JSON.stringify(data, null, 2));
+    console.log('=== END ===');
+
+    if (!response.ok) {
+      throw new Error(JSON.stringify(data, null, 2));
+    }
+
+    return data as SceneValidationResult;
   }
 }

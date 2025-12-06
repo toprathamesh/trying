@@ -6,7 +6,7 @@ import { ControlsOverlay } from './components/v2/ControlsOverlay';
 import { LoadingProgress } from './components/v2/LoadingProgress';
 import { SceneComposer } from './services/sceneComposer';
 import type { ComposedScene } from './services/sceneComposer';
-import type { ObjectAnnotation } from './services/geminiService';
+import type { ObjectAnnotation, SceneValidationResult } from './services/geminiService';
 import { speechService } from './services/speechService';
 
 // Initialize scene composer (no API key needed - backend handles it)
@@ -24,6 +24,7 @@ function App() {
   const [loadingStatus, setLoadingStatus] = useState('');
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [currentScene, setCurrentScene] = useState<ComposedScene | null>(null);
+  const [validationResult, setValidationResult] = useState<SceneValidationResult | null>(null);
   const [showControls, setShowControls] = useState(true);
   
   // Annotation state
@@ -65,6 +66,7 @@ function App() {
     setIsLoading(true);
     setShowAnnotation(false);
     setCurrentAnnotation(null);
+    setValidationResult(null);
     
     // Update input value if using override
     if (queryOverride) {
@@ -74,7 +76,7 @@ function App() {
     try {
       if (mode === 'compose') {
         // AI-composed scene with multiple elements
-        const scene = await sceneComposer.composeFromQuery(query, (update) => {
+        let scene = await sceneComposer.composeFromQuery(query, (update) => {
           setLoadingStatus(
             update.status === 'loading' 
               ? 'Asking AI to compose your scene...'
@@ -88,7 +90,7 @@ function App() {
         
         // Load the scene into Babylon
         setLoadingStatus('Loading 3D models into scene...');
-        await viewerRef.current.loadComposedScene(scene.elements, (loaded, total) => {
+        await viewerRef.current.loadComposedScene(scene.elements, (loaded: number, total: number) => {
           setLoadingProgress(80 + (20 * loaded / total));
           setLoadingStatus(`Loading models (${loaded}/${total})...`);
         });
@@ -96,6 +98,49 @@ function App() {
         // Set camera and ambiance
         viewerRef.current.setCameraPosition(scene.composition.cameraPosition);
         viewerRef.current.setAmbiance(scene.composition.ambiance);
+
+        // Validate layout using Gemini visual understanding
+        try {
+          setLoadingStatus('Capturing scene for validation...');
+          const screenshot = await viewerRef.current.captureScreenshot?.(900, 520);
+
+          setLoadingStatus('Validating layout...');
+          const { validation, adjustedElements } = await sceneComposer.validateSceneLayout(
+            scene.composition.description || scene.composition.title,
+            scene.elements,
+            screenshot
+          );
+
+          setValidationResult(validation);
+
+          // Determine if we need to reapply the layout
+          const layoutChanged = adjustedElements.some((el, idx) => {
+            const original = scene.elements[idx];
+            return original && (
+              original.position.x !== el.position.x ||
+              original.position.y !== el.position.y ||
+              original.position.z !== el.position.z ||
+              original.scale !== el.scale
+            );
+          });
+
+          if (layoutChanged) {
+            setLoadingStatus('Applying layout suggestions...');
+            setLoadingProgress(98);
+            await viewerRef.current.loadComposedScene(adjustedElements, (loaded: number, total: number) => {
+              setLoadingProgress(90 + (10 * loaded / total));
+              setLoadingStatus(`Repositioning models (${loaded}/${total})...`);
+            });
+
+            scene = {
+              ...scene,
+              elements: adjustedElements,
+            };
+            setCurrentScene(scene);
+          }
+        } catch (validationError) {
+          console.error('Scene validation failed:', validationError);
+        }
         
         // Get related suggestions
         const related = await sceneComposer.getRelatedSuggestions();
@@ -306,6 +351,41 @@ function App() {
             }}>
               {currentScene.composition.description}
             </p>
+            {validationResult && (
+              <div style={{
+                marginTop: 10,
+                padding: '10px 12px',
+                borderRadius: 12,
+                background: 'rgba(0, 0, 0, 0.35)',
+                backdropFilter: 'blur(8px)',
+                maxWidth: 320,
+                color: 'white',
+                boxShadow: '0 8px 30px rgba(0,0,0,0.35)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ 
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 28,
+                    height: 28,
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #6B8AFF, #A78BFA)',
+                    color: 'white',
+                    fontWeight: 700,
+                    fontSize: '0.85rem'
+                  }}>
+                    {Math.round(validationResult.layoutScore)}
+                  </span>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>
+                    Layout check
+                  </div>
+                </div>
+                <p style={{ margin: '6px 0 0', fontSize: '0.8rem', lineHeight: 1.35, color: '#ddd' }}>
+                  {validationResult.overallFeedback}
+                </p>
+              </div>
+            )}
           </>
         )}
       </div>

@@ -34,9 +34,12 @@ export default async function handler(req: Request) {
   }
 
   try {
-    const { elements, sceneGoal } = await req.json() as {
+    const { elements, sceneGoal, sceneImageBase64, sceneImageDataUrl, sceneImage } = await req.json() as {
       elements: SceneElement[];
       sceneGoal: string;
+      sceneImageBase64?: string;
+      sceneImageDataUrl?: string;
+      sceneImage?: string;
     };
 
     if (!elements || elements.length === 0) {
@@ -68,6 +71,7 @@ ELEMENTS IN SCENE:
 ${elements.map((el, i) => `${i + 1}. ${el.name} at position (${el.position.x}, ${el.position.y}, ${el.position.z}) with scale ${el.scale}`).join('\n')}
 
 ${elements.some(el => el.thumbnailUrl) ? 'I have included thumbnail images of some models below.' : ''}
+${sceneImageBase64 || sceneImageDataUrl || sceneImage ? 'I have also included a screenshot of the full scene rendering.' : ''}
 
 RESPOND WITH VALID JSON ONLY:
 {
@@ -84,6 +88,33 @@ RESPOND WITH VALID JSON ONLY:
   "overallFeedback": "One sentence about the scene composition"
 }`
     });
+
+    // Add scene screenshot if provided (accepts base64 or data URL)
+    const providedImage = sceneImageBase64 || sceneImageDataUrl || sceneImage;
+    if (providedImage) {
+      try {
+        let base64Image = providedImage;
+        let mimeType = 'image/png';
+
+        const dataUrlMatch = providedImage.match(/^data:(.*?);base64,(.*)$/);
+        if (dataUrlMatch) {
+          mimeType = dataUrlMatch[1] || 'image/png';
+          base64Image = dataUrlMatch[2];
+        }
+
+        contentParts.push({
+          inlineData: {
+            mimeType,
+            data: base64Image,
+          },
+        });
+        contentParts.push({
+          text: '[Image above is a screenshot of the full scene]',
+        });
+      } catch (err) {
+        console.log('Failed to attach scene screenshot:', err);
+      }
+    }
 
     // Add thumbnail images if available
     for (const element of elements) {
@@ -150,5 +181,9 @@ RESPOND WITH VALID JSON ONLY:
     );
   }
 }
+
+
+
+
 
 
